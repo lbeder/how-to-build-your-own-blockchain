@@ -1,0 +1,15 @@
+{
+  "name": "blockchain-academy-how-build-your-own-blockchain",
+  "version": "1.0.0",
+  "description": "Blockchain Academy: How to Build Your Own Blockchain",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lbeder/blockchain-academy-how-build-your-own-blockchain.git"
+  },
+  "author": "Leonid Beder",
+  "license": "MIT",
+  "homepage": "https://github.com/lbeder/blockchain-academy-how-build-your-own-blockchain#readme",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
