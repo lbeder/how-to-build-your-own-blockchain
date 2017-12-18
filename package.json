@@ -11,5 +11,8 @@
   "homepage": "https://github.com/lbeder/blockchain-academy-how-build-your-own-blockchain#readme",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "js-sha256": "^0.9.0"
   }
 }
