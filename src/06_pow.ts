@@ -69,7 +69,7 @@ export class Blockchain {
         break;
       }
 
-      newBlock.nonce++
+      newBlock.nonce++;
     }
 
     return newBlock;

@@ -69,7 +69,7 @@ export class Blockchain {
         break;
       }
 
-      newBlock.nonce++
+      newBlock.nonce++;
     }
 
     return newBlock;
@@ -93,7 +93,7 @@ export class Blockchain {
     this.blocks.push(newBlock);
 
     // Remove the mined transactions.
-    this.transactionPool = []
+    this.transactionPool = [];
 
     return newBlock;
   }
