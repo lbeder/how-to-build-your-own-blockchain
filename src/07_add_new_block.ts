@@ -61,7 +61,7 @@ export class Blockchain {
     newBlock.nonce = 0;
 
     while (true) {
-      let pow = newBlock.sha256();
+      const pow = newBlock.sha256();
       console.log(`Mining block #${newBlock.blockNumber}, using nonce of ${newBlock.nonce}: \n\t${pow}`);
 
       if (this.isPoWValid(pow)) {
@@ -119,6 +119,6 @@ blockchain.submitTransaction("Alice", "Eve", 12345);
 
 const block = blockchain.createBlock();
 
-console.log(`Mined block: ${JSON.stringify(serialize(block))}`)
-console.log(`Mined block with: ${block.sha256()}`)
+console.log(`Mined block: ${JSON.stringify(serialize(block))}`);
+console.log(`Mined block with: ${block.sha256()}`);
 

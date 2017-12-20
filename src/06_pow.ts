@@ -56,12 +56,12 @@ export class Blockchain {
   public mineBlock(transactions: Array<Transaction>): Block {
     const lastBlock = this.getLastBlock();
 
-    let newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
+    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
 
     newBlock.nonce = 0;
 
     while (true) {
-      let pow = newBlock.sha256();
+      const pow = newBlock.sha256();
       console.log(`Mining block #${newBlock.blockNumber}, using nonce of ${newBlock.nonce}: \n\t${pow}`);
 
       if (this.isPoWValid(pow)) {
@@ -108,6 +108,6 @@ const blockchain = new Blockchain();
 const txn1 = new Transaction("Alice", "Bob", 1000);
 const txn2 = new Transaction("Alice", "Eve", 12345);
 const block = blockchain.mineBlock([txn1, txn2]);
-console.log(`Mined block: ${JSON.stringify(serialize(block))}`)
-console.log(`Mined block with: ${block.sha256()}`)
+console.log(`Mined block: ${JSON.stringify(serialize(block))}`);
+console.log(`Mined block with: ${block.sha256()}`);
 
