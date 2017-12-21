@@ -117,6 +117,7 @@ export class Blockchain {
 }
 
 // Web server
+const PORT = 3000;
 const app = express();
 const blockchain = new Blockchain();
 const nodeId = uuidv1();
@@ -137,11 +138,16 @@ app.get("/blocks", (req: express.Request, res: express.Response) => {
 
 // Show specific block.
 app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
-  const id = req.params.id;
+  const id = Number(req.params.id);
+  if (isNaN(id)) {
+    res.json("Invalid parameter!");
+    res.status(500);
+    return;
+  }
 
   if (id >= blockchain.blocks.length) {
-    res.status(404);
     res.json(`Block #${id} wasn't found!`);
+    res.status(404);
     return;
   }
 
@@ -154,13 +160,23 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
 });
 
 app.post("/transactions/new", (req: express.Request, res: express.Response) => {
-    // var name = req.body.name,
-    //     color = req.body.color;
-    // ...
+  const senderAddress = req.body.senderAddress;
+  const recipientAddress = req.body.recipientAddress;
+  const value = Number(req.body.value);
+
+  if (!senderAddress || !recipientAddress || !value)  {
+    res.json("Invalid parameters!");
+    res.status(500);
+    return;
+  }
+
+  blockchain.submitTransaction(senderAddress, recipientAddress, value);
+
+  res.json("Transaction was added successfully");
 });
 
 if (!module.parent) {
-  app.listen(3000);
+  app.listen(PORT);
 
-  console.log(`Web server started on port 3000. Node is: ${nodeId}`);
+  console.log(`Web server started on port ${PORT}. Node is: ${nodeId}`);
 }
