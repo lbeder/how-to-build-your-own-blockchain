@@ -1,8 +1,12 @@
 import { sha256 } from "js-sha256";
-import { serialize } from "serializer.ts/Serializer";
+import { serialize, deserialize } from "serializer.ts/Serializer";
 import BigNumber from "bignumber.js";
-import * as uuidv1 from "uuid/v1";
 
+import * as fs from "fs";
+import * as path from "path";
+import deepEqual = require("deep-equal");
+
+import * as uuidv1 from "uuid/v1";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 
@@ -36,32 +40,93 @@ export class Block {
     this.prevBlock = prevBlock;
   }
 
+  // Calculates the SHA256 of the entire block, including its transactions.
   public sha256(): string {
-    return sha256(JSON.stringify(serialize(this)));
+    return sha256(JSON.stringify(serialize<Block>(this)));
   }
 }
 
 export class Blockchain {
-  // Let's define that our "genesis" block is empty.
-  static readonly GENESIS_BLOCK = new Block(0, [], Blockchain.now(), 0, "");
+  // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
+  static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
 
   static readonly DIFFICULTY = 4;
   static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
-  static readonly MINING_SENDER = "<COINBASE>";
-  static readonly MINING_REWARD = 50;
-
+  public nodeId: string;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
+  private storagePath: string;
 
-  constructor() {
-    this.blocks = [Blockchain.GENESIS_BLOCK];
+  constructor(nodeId: string) {
+    this.nodeId = nodeId;
     this.transactionPool = [];
+
+    this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
+
+    // Load the blockchain from the storage.
+    this.load();
+  }
+
+  // Saves the blockchain to the disk.
+  private save() {
+    fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.blocks), undefined, 2), "utf8");
+  }
+
+  // Loads the blockchain from the disk.
+  private load() {
+    try {
+      this.blocks = deserialize<Block[]>(Block, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
+    } catch (err) {
+      if (err.code !== "ENOENT") {
+        throw err;
+      }
+
+      this.blocks = [Blockchain.GENESIS_BLOCK];
+    } finally {
+      this.verify();
+    }
+  }
+
+  // Validates the blockchain.
+  private verify() {
+    // The blockchain can't be empty. It should always contain at least the genesis block.
+    if (this.blocks.length === 0) {
+      throw new Error("Blockchain can't be empty!");
+    }
+
+    // The first block has to be the genesis block.
+    if (!deepEqual(this.blocks[0], Blockchain.GENESIS_BLOCK)) {
+      throw new Error("Invalid first block!");
+    }
+
+    // Verify the chain itself.
+    for (let i = 1; i < this.blocks.length; ++i) {
+      const current = this.blocks[i];
+
+      // Verify block number.
+      if (current.blockNumber !== i) {
+        throw new Error(`Invalid block number ${current.blockNumber} for block #${i}!`);
+      }
+
+      // Verify that the current blocks properly points to the previous block.
+      const previous = this.blocks[i - 1];
+      if (current.prevBlock !== previous.sha256()) {
+        throw new Error(`Invalid previous block hash for block #${i}!`);
+      }
+
+      // Verify the difficutly of the PoW.
+      //
+      // TODO: what if the diffuclty was adjusted?
+      if (!this.isPoWValid(current.sha256())) {
+        throw new Error(`Invalid previous block hash's difficutly for block #${i}!`);
+      }
+    }
   }
 
   // Mines for block.
   private mineBlock(transactions: Array<Transaction>): Block {
-     // Create a new block which will "point" to the last block.
+    // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
     const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
 
@@ -83,20 +148,25 @@ export class Blockchain {
   // Validates PoW.
   public isPoWValid(pow: string): boolean {
     try {
-      return new BigNumber(`0x${pow}`).lessThanOrEqualTo(Blockchain.TARGET.toString());
+      if (!pow.startsWith("0x")) {
+        pow = `0x${pow}`;
+      }
+
+      return new BigNumber(pow).lessThanOrEqualTo(Blockchain.TARGET.toString());
     } catch {
       return false;
     }
   }
 
-  // Creates new block on the blockchain.
-  public createBlock(nodeId: string): Block {
-    // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, nodeId, Blockchain.MINING_REWARD),
-      ...this.transactionPool];
+  // Submits new transaction
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+  }
 
+  // Creates new block on the blockchain.
+  public createBlock(): Block {
     // Mine the transactions in a new block.
-    const newBlock = this.mineBlock(transactions);
+    const newBlock = this.mineBlock(this.transactionPool);
 
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
@@ -104,12 +174,10 @@ export class Blockchain {
     // Remove the mined transactions.
     this.transactionPool = [];
 
-    return newBlock;
-  }
+    // Save the blockchain to the storage.
+    this.save();
 
-  // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+    return newBlock;
   }
 
   public getLastBlock(): Block {
@@ -124,8 +192,8 @@ export class Blockchain {
 // Web server
 const PORT = 3000;
 const app = express();
-const blockchain = new Blockchain();
 const nodeId = uuidv1();
+const blockchain = new Blockchain(nodeId);
 
 // Set up bodyParser;
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -157,13 +225,6 @@ app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
   }
 
   res.json(serialize(blockchain.blocks[id]));
-});
-
-app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
-  // Mine the new block.
-  const newBlock = blockchain.createBlock(nodeId);
-
-  res.json(`Mined new block #${newBlock.blockNumber}`);
 });
 
 // Show all transactions in the transaction pool.
