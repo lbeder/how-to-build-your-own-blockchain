@@ -1,35 +1,37 @@
 export type Address = string;
 
 export class Transaction {
-  private senderAddress: Address;
-  private recipient: Address;
-  private value: number;
+  public senderAddress: Address;
+  public recipientAddress: Address;
+  public value: number;
 }
 
 export class Block {
-  private blockNumber: number;
-  private transactions: Array<Transaction>;
-  private timestamp: number;
-  private nonce: number;
-  private prevBlock: string;
+  public blockNumber: number;
+  public transactions: Array<Transaction>;
+  public timestamp: number;
+  public nonce: number;
+  public prevBlock: string;
 }
 
 export class Blockchain {
-  private blocks: Array<Block>;
-  private transactionPool: Array<Transaction>;
+  public nodeId: string;
+  public blocks: Array<Block>;
+  public transactionPool: Array<Transaction>;
 
-  constructor() {
+  constructor(nodeId: string) {
+    this.nodeId = nodeId;
     this.blocks = [];
     this.transactionPool = [];
   }
 
-  // Creates new block on the blockchain.
-  public createBlock() {
+  // Submits new transaction
+  public submitTransaction() {
     // TBD
   }
 
-  // Submits new transaction
-  public submitTransaction() {
+  // Creates new block on the blockchain.
+  public createBlock() {
     // TBD
   }
 }

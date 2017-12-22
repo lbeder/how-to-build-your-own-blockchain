@@ -1,19 +1,21 @@
 export class Blockchain {
-  private blocks: Array<any>;
-  private transactionPool: Array<any>;
+  public nodeId: string;
+  public blocks: Array<any>;
+  public transactionPool: Array<any>;
 
-  constructor() {
+  constructor(nodeId: string) {
+    this.nodeId = nodeId;
     this.blocks = [];
     this.transactionPool = [];
   }
 
-  // Creates new block on the blockchain.
-  public createBlock() {
+  // Submits new transaction
+  public submitTransaction() {
     // TBD
   }
 
-  // Submits new transaction
-  public submitTransaction() {
+  // Creates new block on the blockchain.
+  public createBlock() {
     // TBD
   }
 }

@@ -1,27 +1,29 @@
 export class Block {
-  private blockNumber: number;
-  private transactions: Array<any>;
-  private timestamp: number;
-  private nonce: number;
-  private prev_block: string;
+  public blockNumber: number;
+  public transactions: Array<any>;
+  public timestamp: number;
+  public nonce: number;
+  public prev_block: string;
 }
 
 export class Blockchain {
-  private blocks: Array<Block>;
-  private transactionPool: Array<any>;
+  public nodeId: string;
+  public blocks: Array<Block>;
+  public transactionPool: Array<any>;
 
-  constructor() {
+  constructor(nodeId: string) {
+    this.nodeId = nodeId;
     this.blocks = [];
     this.transactionPool = [];
   }
 
-  // Creates new block on the blockchain.
-  public createBlock() {
+  // Submits new transaction
+  public submitTransaction() {
     // TBD
   }
 
-  // Submits new transaction
-  public submitTransaction() {
+  // Creates new block on the blockchain.
+  public createBlock() {
     // TBD
   }
 }

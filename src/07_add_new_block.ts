@@ -32,33 +32,34 @@ export class Block {
     this.prevBlock = prevBlock;
   }
 
+  // Calculates the SHA256 of the entire block, including its transactions.
   public sha256(): string {
     return sha256(JSON.stringify(serialize(this)));
   }
 }
 
 export class Blockchain {
-  // Let's define that our "genesis" block is empty.
+  // Let's define that our "genesis" block as an empty block, starting from now.
   static readonly GENESIS_BLOCK = new Block(0, [], Blockchain.now(), 0, "");
 
   static readonly DIFFICULTY = 4;
   static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
-  private blocks: Array<Block>;
-  private transactionPool: Array<Transaction>;
+  public nodeId: string;
+  public blocks: Array<Block>;
+  public transactionPool: Array<Transaction>;
 
-  constructor() {
+  constructor(nodeId: string) {
+    this.nodeId = nodeId;
     this.blocks = [Blockchain.GENESIS_BLOCK];
     this.transactionPool = [];
   }
 
   // Mines for block.
   public mineBlock(transactions: Array<Transaction>): Block {
+    // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
-
     const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
-
-    newBlock.nonce = 0;
 
     while (true) {
       const pow = newBlock.sha256();
@@ -75,13 +76,23 @@ export class Blockchain {
     return newBlock;
   }
 
+
   // Validates PoW.
   public isPoWValid(pow: string): boolean {
     try {
-      return new BigNumber(`0x${pow}`).lessThanOrEqualTo(Blockchain.TARGET.toString());
+      if (!pow.startsWith("0x")) {
+        pow = `0x${pow}`;
+      }
+
+      return new BigNumber(pow).lessThanOrEqualTo(Blockchain.TARGET.toString());
     } catch {
       return false;
     }
+  }
+
+  // Submits new transaction
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
   }
 
   // Creates new block on the blockchain.
@@ -98,11 +109,6 @@ export class Blockchain {
     return newBlock;
   }
 
-  // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
-  }
-
   public getLastBlock(): Block {
     return this.blocks[this.blocks.length - 1];
   }
@@ -112,7 +118,7 @@ export class Blockchain {
   }
 }
 
-const blockchain = new Blockchain();
+const blockchain = new Blockchain("node123");
 
 blockchain.submitTransaction("Alice", "Bob", 1000);
 blockchain.submitTransaction("Alice", "Eve", 12345);
