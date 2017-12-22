@@ -48,6 +48,9 @@ export class Blockchain {
   static readonly DIFFICULTY = 4;
   static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
+  static readonly MINING_SENDER = "<COINBASE>";
+  static readonly MINING_REWARD = 50;
+
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
 
@@ -57,12 +60,10 @@ export class Blockchain {
   }
 
   // Mines for block.
-  public mineBlock(transactions: Array<Transaction>): Block {
+  private mineBlock(transactions: Array<Transaction>): Block {
+     // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
-
     const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
-
-    newBlock.nonce = 0;
 
     while (true) {
       const pow = newBlock.sha256();
@@ -89,9 +90,13 @@ export class Blockchain {
   }
 
   // Creates new block on the blockchain.
-  public createBlock(): Block {
+  public createBlock(nodeId: string): Block {
+    // Add a "coinbase" transaction granting us the mining reward!
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, nodeId, Blockchain.MINING_REWARD),
+      ...this.transactionPool];
+
     // Mine the transactions in a new block.
-    const newBlock = this.mineBlock(this.transactionPool);
+    const newBlock = this.mineBlock(transactions);
 
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
@@ -154,15 +159,9 @@ app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.blocks[id]));
 });
 
-const MINING_SENDER = "<COINBASE>";
-const MINING_REWARD = 50;
-
 app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
-  // Add a "coinbase" transaction granting us the mining reward!
-  blockchain.submitTransaction(MINING_SENDER, nodeId, MINING_REWARD);
-
   // Mine the new block.
-  const newBlock = blockchain.createBlock();
+  const newBlock = blockchain.createBlock(nodeId);
 
   res.json(`Mined new block #${newBlock.blockNumber}`);
 });
