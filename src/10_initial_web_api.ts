@@ -232,7 +232,7 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.transactionPool));
 });
 
-app.post("/transactions/new", (req: express.Request, res: express.Response) => {
+app.post("/transactions", (req: express.Request, res: express.Response) => {
   const senderAddress = req.body.senderAddress;
   const recipientAddress = req.body.recipientAddress;
   const value = Number(req.body.value);
