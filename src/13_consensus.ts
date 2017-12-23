@@ -337,10 +337,6 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
   res.json("Transaction was added successfully");
 });
 
-app.get("/node", (req: express.Request, res: express.Response) => {
-  res.json(nodeId);
-});
-
 app.get("/nodes", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.nodes.toArray()));
 });
