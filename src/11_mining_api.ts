@@ -135,7 +135,7 @@ export class Blockchain {
 
     while (true) {
       const pow = newBlock.sha256();
-      console.log(`Mining block #${newBlock.blockNumber}, using nonce of ${newBlock.nonce}: \n\t${pow}`);
+      console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW: ${pow}!`);
