@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 import deepEqual = require("deep-equal");
 
-import * as uuidv1 from "uuid/v1";
+import * as uuidv4 from "uuid/v4";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import { URL } from "url";
@@ -225,7 +225,7 @@ export class Blockchain {
 const ARGS = parseArgs(process.argv.slice(2));
 const PORT = ARGS.port || 3000;
 const app = express();
-const nodeId = uuidv1();
+const nodeId = uuidv4();
 const blockchain = new Blockchain(nodeId);
 
 // Set up bodyParser:
@@ -315,6 +315,6 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 if (!module.parent) {
   app.listen(PORT);
 
-  console.log(`Web server started on port ${PORT}. Node is: ${nodeId}`);
+  console.log(`Web server started on port ${PORT}. Node ID is: ${nodeId}`);
 }
 
