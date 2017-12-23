@@ -195,7 +195,7 @@ const app = express();
 const nodeId = uuidv1();
 const blockchain = new Blockchain(nodeId);
 
-// Set up bodyParser;
+// Set up bodyParser:
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
