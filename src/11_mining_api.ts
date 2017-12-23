@@ -48,13 +48,13 @@ export class Block {
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
-  static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
+  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
 
-  static readonly DIFFICULTY = 4;
-  static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
+  public static readonly DIFFICULTY = 4;
+  public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
-  static readonly MINING_SENDER = "<COINBASE>";
-  static readonly MINING_REWARD = 50;
+  public static readonly MINING_SENDER = "<COINBASE>";
+  public static readonly MINING_REWARD = 50;
 
   public nodeId: string;
   public blocks: Array<Block>;
@@ -91,7 +91,7 @@ export class Blockchain {
     }
   }
 
-  // Validates the blockchain.
+  // Verifies the blockchain.
   private verify() {
     // The blockchain can't be empty. It should always contain at least the genesis block.
     if (this.blocks.length === 0) {
@@ -121,7 +121,7 @@ export class Blockchain {
       // Verify the difficutly of the PoW.
       //
       // TODO: what if the diffuclty was adjusted?
-      if (!this.isPoWValid(current.sha256())) {
+      if (!Blockchain.isPoWValid(current.sha256())) {
         throw new Error(`Invalid previous block hash's difficutly for block #${i}!`);
       }
     }
@@ -137,7 +137,7 @@ export class Blockchain {
       const pow = newBlock.sha256();
       console.log(`Mining block #${newBlock.blockNumber}, using nonce of ${newBlock.nonce}: \n\t${pow}`);
 
-      if (this.isPoWValid(pow)) {
+      if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW: ${pow}!`);
         break;
       }
@@ -149,7 +149,7 @@ export class Blockchain {
   }
 
   // Validates PoW.
-  public isPoWValid(pow: string): boolean {
+  public static isPoWValid(pow: string): boolean {
     try {
       if (!pow.startsWith("0x")) {
         pow = `0x${pow}`;
@@ -191,7 +191,7 @@ export class Blockchain {
     return this.blocks[this.blocks.length - 1];
   }
 
-  static now(): number {
+  public static now(): number {
     return Math.round(new Date().getTime() / 1000);
   }
 }
