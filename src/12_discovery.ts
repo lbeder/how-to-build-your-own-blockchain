@@ -285,7 +285,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
 
   blockchain.submitTransaction(senderAddress, recipientAddress, value);
 
-  res.json("Transaction was added successfully");
+  res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
