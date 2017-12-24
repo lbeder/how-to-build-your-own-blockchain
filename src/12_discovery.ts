@@ -317,4 +317,3 @@ if (!module.parent) {
 
   console.log(`Web server started on port ${PORT}. Node ID is: ${nodeId}`);
 }
-
