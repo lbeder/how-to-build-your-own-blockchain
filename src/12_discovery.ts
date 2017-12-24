@@ -225,7 +225,7 @@ export class Blockchain {
 const ARGS = parseArgs(process.argv.slice(2));
 const PORT = ARGS.port || 3000;
 const app = express();
-const nodeId = uuidv4();
+const nodeId = ARGS.id || uuidv4();
 const blockchain = new Blockchain(nodeId);
 
 // Set up bodyParser:
