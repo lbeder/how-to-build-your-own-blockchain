@@ -3,7 +3,7 @@ export class Block {
   public transactions: Array<any>;
   public timestamp: number;
   public nonce: number;
-  public prev_block: string;
+  public prevBlock: string;
 }
 
 export class Blockchain {
