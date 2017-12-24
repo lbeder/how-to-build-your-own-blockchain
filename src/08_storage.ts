@@ -138,7 +138,6 @@ export class Blockchain {
   }
 
   public getLastBlock(): Block {
-    console.log(this.blocks);
     return this.blocks[this.blocks.length - 1];
   }
 
