@@ -55,6 +55,19 @@ export class Blockchain {
     this.transactionPool = [];
   }
 
+  // Validates PoW.
+  public static isPoWValid(pow: string): boolean {
+    try {
+      if (!pow.startsWith("0x")) {
+        pow = `0x${pow}`;
+      }
+
+      return new BigNumber(pow).lessThanOrEqualTo(Blockchain.TARGET.toString());
+    } catch {
+      return false;
+    }
+  }
+
   // Mines for block.
   public mineBlock(transactions: Array<Transaction>): Block {
     // Create a new block which will "point" to the last block.
@@ -74,20 +87,6 @@ export class Blockchain {
     }
 
     return newBlock;
-  }
-
-
-  // Validates PoW.
-  public static isPoWValid(pow: string): boolean {
-    try {
-      if (!pow.startsWith("0x")) {
-        pow = `0x${pow}`;
-      }
-
-      return new BigNumber(pow).lessThanOrEqualTo(Blockchain.TARGET.toString());
-    } catch {
-      return false;
-    }
   }
 
   // Submits new transaction
@@ -116,4 +115,3 @@ const txn2 = new Transaction("Alice", "Eve", 12345);
 const block = blockchain.mineBlock([txn1, txn2]);
 console.log(`Mined block: ${JSON.stringify(serialize(block))}`);
 console.log(`Mined block with: ${block.sha256()}`);
-
