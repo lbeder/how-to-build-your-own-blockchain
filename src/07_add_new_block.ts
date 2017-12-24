@@ -34,7 +34,7 @@ export class Block {
 
   // Calculates the SHA256 of the entire block, including its transactions.
   public sha256(): string {
-    return sha256(JSON.stringify(serialize(this)));
+    return sha256(JSON.stringify(serialize<Block>(this)));
   }
 }
 
