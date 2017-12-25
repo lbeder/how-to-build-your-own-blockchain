@@ -9,7 +9,7 @@ trap "kill 0" EXIT
 NODE_PORT=3000
 NODE_URL="http://localhost:${NODE_PORT}"
 
-node ../dist/11_mining_api.js --port=${NODE_PORT} &
+node ../dist/11_mining_api.js &
 
 sleep 2
 
@@ -39,4 +39,3 @@ echo -e && read -n 1 -s -r -p "Mining second block. Press any key to continue...
 curl -X POST -H "Content-Type: application/json" "${NODE_URL}/blocks/mine" -w "\n"
 
 wait
-
