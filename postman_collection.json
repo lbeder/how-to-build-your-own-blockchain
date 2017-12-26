@@ -1,0 +1,278 @@
+{
+	"info": {
+		"name": "Blockchain Academy",
+		"_postman_id": "0f390873-b99a-559f-aea9-039cdbc582b5",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "/blocks (3000)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3000/blocks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"blocks"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks (3001)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3001/blocks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"blocks"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3000)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3000/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"transactions"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3001)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3001/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"transactions"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3000)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"Alice\",\n  \"recipientAddress\": \"Bob\",\n  \"value\": 123\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/transactions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"transactions"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks/mine (3000)",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:3000/blocks/mine",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"blocks",
+						"mine"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3000)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3000/nodes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"nodes"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3001)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3001/nodes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"nodes"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3000)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"node2\",\n  \"url\": \"http://localhost:3001\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/nodes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"nodes"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3001)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"node1\",\n  \"url\": \"http://localhost:3000\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3001/nodes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3001",
+					"path": [
+						"nodes"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		},
+		{
+			"name": "/consensus (3000)",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:3000/nodes/consensus",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"nodes",
+						"consensus"
+					]
+				},
+				"description": null
+			},
+			"response": []
+		}
+	]
+}
