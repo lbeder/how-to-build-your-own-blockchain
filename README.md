@@ -2,6 +2,8 @@
 
 In this repository, you'll find the source code and material of our first [How to Build Your Own Blockchain](https://www.facebook.com/events/541216486228386/) event.
 
+You can find the slides of the talk here: [How to Build Your Own Blockchain - Slides](https://docs.google.com/presentation/d/10HVb0P8GfDHTnBbOvr6SnEqFB498Ia09RINFIEXbw8Q/edit?usp=sharing).
+
 ![How to Build Your Own Blockchain](images/event.png)
 
 ## Blockchain Academy
