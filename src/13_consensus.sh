@@ -60,4 +60,3 @@ curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
 
 wait
-
