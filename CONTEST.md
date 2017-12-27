@@ -1,12 +1,16 @@
 # Award Winning Contest
 
-* Do you have an idea for an interesting feature?
-* Can you make it more secure (in of the bazillion possible ways)?
-* Can you make it more performant? More efficient? Easier to govern?
+The blockchain that we've implemented is very basic — now, how about extending it? In case you missed it, **we’re thrilled to announce a very special competition with some awesome prizes:**
 
-You have 3 weeks to submit an interesting PR (according to the Terms of Service in the repo) and win prizes!
+![Awards](images/awards.png)
 
-# Terms and conditions
+In general though, the rules are simple — make our code more awesome and the most interesting creative blockchains (as attested by our committee of blockchain experts) will win the awesome prizes above. In addition, we will be publishing the most interesting submissions (even those that didn’t make the final cut) to give them props and show the world what was possible.
+
+This is an opportunity for you to go wild and be creative. There are numerous ways you can improve the blockchain in creative ways — you can add new features, run thousands of nodes, make it more secure, more scalable, better address its privacy, run smart contracts (we wouldn’t want to give away too many suggestions). In general make it a better more interesting blockchain. There are so many ways you can improve it and make it a better blockchain so we’re excited to see the creative things you pull off.
+
+This is a great opportunity, for any developer, interested in learning more about blockchain to take a stab at doing something awesome. We’re excited to see what you’ll come up with, and who will end up winning the awesome prizes.
+
+# Terms and Conditions
 
 1. The promoter is: Cointree Ltd (company no. 515659050).
 
