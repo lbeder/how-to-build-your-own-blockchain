@@ -19,3 +19,17 @@ Blockchain academy was founded by top tier professionals that have been actively
 ## License
 
 [MIT](LICENSE)
+
+
+## Initial setup
+
+```
+npm install -g ts-node
+npm install -g typescript-compiler
+
+compile using
+tsc
+or
+npm run build 
+
+```

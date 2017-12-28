@@ -15,7 +15,61 @@ import axios from "axios";
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
 
-export type Address = string;
+
+// suggestions
+// 1. validate unspent amount in senderAddress - todo
+// 2. validate address exists and registered before sending to it - done
+// 3. create personal names for the addresses (ohads-personal) - done 
+
+export class PublicData{
+    public blockchain:  Array<Block>;
+    public addresses:  Array<Address>;
+
+    constructor(blocks: Array<Block>, addresses: Array<Address>){
+        this.blockchain = blocks;
+        this.addresses = addresses;
+    }
+}
+
+
+export class Address {
+  public publicKey: string;
+  public prettyName: string;
+  public date: number;
+
+  // private privateKey: string,
+  constructor(prettyName?: string, publicKey?: string){
+    // generate a public key (todo, private key as well)
+   // and pair it to the pretty name, if passed
+    if (prettyName){
+      this.prettyName = prettyName
+    }
+    if (publicKey){
+        this.publicKey = publicKey
+    }else{
+        this.publicKey = uuidv4();
+        this.date = Blockchain.now();
+    }
+
+  }
+
+  public updatePrettyName(prettyName: string, publicAddress: string): string {
+      throw new Error("Not yet implemented!");
+  }
+
+  public validateAddress(){
+      throw new Error("Not yet implemented!");
+  }
+
+  public mostPrettyName(){
+    return this.prettyName || this.publicKey
+  }
+
+  public isSameAddress(addressToMatch: Address) {
+      return ((this.publicKey == addressToMatch.publicKey) || (this.prettyName == addressToMatch.prettyName))
+  }
+
+}
 
 export class Transaction {
   public senderAddress: Address;
@@ -23,6 +77,8 @@ export class Transaction {
   public value: number;
 
   constructor(senderAddress: Address, recipientAddress: Address, value: number) {
+
+
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
@@ -72,21 +128,23 @@ export class Blockchain {
   public static readonly DIFFICULTY = 4;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
-  public static readonly MINING_SENDER = "<COINBASE>";
+  public static readonly MINING_SENDER = new Address("<COINBASE>");
   public static readonly MINING_REWARD = 50;
 
-  public nodeId: string;
+  public nodeId: Address;
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
+  public addresses: Array<Address>; // should be a type of map, not an array, for better performance
   private storagePath: string;
 
   constructor(nodeId: string) {
-    this.nodeId = nodeId;
+    this.nodeId = new Address(undefined, nodeId);
     this.nodes = new Set<Node>();
     this.transactionPool = [];
+    this.addresses = [];
 
-    this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
+    this.storagePath = path.resolve(__dirname, "../", `${this.nodeId.publicKey}.blockchain`);
 
     // Load the blockchain from the storage.
     this.load();
@@ -99,19 +157,28 @@ export class Blockchain {
 
   // Saves the blockchain to the disk.
   private save() {
-    fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.blocks), undefined, 2), "utf8");
+      const data ={
+        blockchain: serialize(this.blocks),
+        addresses: serialize(this.addresses)
+      };
+    fs.writeFileSync(this.storagePath, JSON.stringify(data, undefined, 2), "utf8");
   }
 
   // Loads the blockchain from the disk.
   private load() {
     try {
-      this.blocks = deserialize<Block[]>(Block, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
+      const data = this.getAllPublicData();
+      const blocks = data['blockchain'];
+      const addresses = data['addresses'];
+      this.blocks = deserialize<Block[]>(Block, blocks);
+      this.addresses = deserialize<Address[]>(Address, addresses);
     } catch (err) {
       if (err.code !== "ENOENT") {
         throw err;
       }
 
       this.blocks = [Blockchain.GENESIS_BLOCK];
+      this.addresses = [];
     } finally {
       this.verify();
     }
@@ -166,17 +233,20 @@ export class Blockchain {
     if (!Blockchain.verify(this.blocks)) {
       throw new Error("Invalid blockchain!");
     }
+    // Todo, verify addresses as well as verifying blocks
   }
 
   // Receives candidate blockchains, verifies them, and if a longer and valid alternative is found - uses it to replace
   // our own.
-  public consensus(blockchains: Array<Array<Block>>): boolean {
+  public consensus(blockchains: Array<PublicData>): boolean {
+
     // Iterate over the proposed candidates and find the longest, valid, candidate.
     let maxLength: number = 0;
     let bestCandidateIndex: number = -1;
 
     for (let i = 0; i < blockchains.length; ++i) {
-      const candidate = blockchains[i];
+      const candidate = blockchains[i].blockchain;
+      const addresses = blockchains[i].addresses;
 
       // Don't bother validating blockchains shorther than the best candidate so far.
       if (candidate.length <= maxLength) {
@@ -189,10 +259,11 @@ export class Blockchain {
         bestCandidateIndex = i;
       }
     }
-
+    // todo, figure out consensus algorithm for addresses
+      // possibly merge all address. if duplicate, choose oldest one
     // Compare the candidate and consider to use it.
     if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))) {
-      this.blocks = blockchains[bestCandidateIndex];
+      this.blocks = blockchains[bestCandidateIndex].blockchain;
       this.save();
 
       return true;
@@ -235,9 +306,34 @@ export class Blockchain {
     return newBlock;
   }
 
+  public validateTransaction(value: number, senderAddress?: string, senderPrettyName?: string,
+                             recipientAddress?: string, recipientPrettyName?: string){
+
+    // todo. value should be validated as well
+    const senderAddressObj = this.findAddress(senderAddress, senderPrettyName);
+    const recipientAddressObj = this.findAddress(recipientAddress, recipientPrettyName);
+
+    if ((!senderAddressObj)){
+        throw Error('failed to find sender Address!')
+    }
+
+    if ((!recipientAddressObj)){
+        throw Error('failed to find recipient Address!')
+    }
+
+    if (senderAddressObj.publicKey == recipientAddressObj.publicKey){
+        throw Error('sending money to yourself is useless!' + senderAddressObj.publicKey + ' == ' + recipientAddressObj.publicKey)
+    }
+
+    return {
+        senderAddressObj: senderAddressObj,
+        recipientAddressObj: recipientAddressObj,
+    }
+
+  }
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+  public submitTransaction(senderAddressObj: Address, recipientAddressObj: Address, value: number) {
+    this.transactionPool.push(new Transaction(senderAddressObj, recipientAddressObj, value));
   }
 
   // Creates new block on the blockchain.
@@ -260,6 +356,17 @@ export class Blockchain {
 
     return newBlock;
   }
+  
+  public findAddress(publicKey?: string, prettyName?: string): Address{
+      const addressToFind = new Address(prettyName, publicKey);
+
+      for(let i=0; i<this.addresses.length; i++){
+          if (this.addresses[i].isSameAddress(addressToFind)){
+              return this.addresses[i];
+          }
+      }
+      return;
+  }
 
   public getLastBlock(): Block {
     return this.blocks[this.blocks.length - 1];
@@ -268,6 +375,19 @@ export class Blockchain {
   public static now(): number {
     return Math.round(new Date().getTime() / 1000);
   }
+
+  public addANewAddress(address: Address): boolean{
+      /// todo. a smarter push that validates existing pretty name to ensure no duplicates
+      this.addresses.push(address);
+      this.save();
+
+      return true
+  }
+
+  public getAllPublicData() {
+      return JSON.parse(fs.readFileSync(this.storagePath, "utf8"));
+  }
+
 }
 
 // Web server:
@@ -281,14 +401,21 @@ const blockchain = new Blockchain(nodeId);
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-
-  res.status(500);
+    console.error(err.stack);
+    res.status(500);
 });
 
 // Show all the blocks.
 app.get("/blocks", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.blocks));
+});
+
+// Show all the blockchain data.
+app.get("/data", (req: express.Request, res: express.Response) => {
+    // todo, better to read from memory instead from disk
+
+    const data = blockchain.getAllPublicData();
+    res.json(serialize(data));
 });
 
 // Show specific block.
@@ -322,19 +449,30 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
 });
 
 app.post("/transactions", (req: express.Request, res: express.Response) => {
+
   const senderAddress = req.body.senderAddress;
+  const senderPrettyName = req.body.senderPrettyName;
   const recipientAddress = req.body.recipientAddress;
+  const recipientPrettyName = req.body.recipientPrettyName;
   const value = Number(req.body.value);
 
-  if (!senderAddress || !recipientAddress || !value)  {
-    res.json("Invalid parameters!");
+
+  // todo possible improvement. check valid addresses
+  // check sender balance
+  // another thing, payment request, that prepares the transaction and sends it only if sender approves
+  // private key for authentication
+
+  if (!(senderAddress || senderPrettyName) || !(recipientAddress || recipientPrettyName) || !value)  {
+    res.json("Missing parameters!");
     res.status(500);
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value);
+  const result = blockchain.validateTransaction(value, senderAddress, senderPrettyName, recipientAddress, recipientPrettyName);
+  blockchain.submitTransaction(result.senderAddressObj, result.recipientAddressObj, value);
 
-  res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
+
+  res.json(`Sent ${value} units from ${result.senderAddressObj.mostPrettyName()} to ${result.recipientAddressObj.mostPrettyName()} was added successfully`);
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
@@ -342,6 +480,7 @@ app.get("/nodes", (req: express.Request, res: express.Response) => {
 });
 
 app.post("/nodes", (req: express.Request, res: express.Response) => {
+  // register a new node 
   const id = req.body.id;
   const url = new URL(req.body.url);
 
@@ -363,8 +502,9 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
-  const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}blocks`));
+  const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}data`));
 
+  // todo, also sync addresses , not just blocks
   if (requests.length === 0) {
     res.json("There are nodes to sync with!");
     res.status(404);
@@ -373,7 +513,13 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   }
 
   axios.all(requests).then(axios.spread((...blockchains) => {
-    if (blockchain.consensus(blockchains.map(res => deserialize<Block[]>(Block, res.data)))) {
+    if (blockchain.consensus(blockchains.map(res =>
+         new PublicData(
+              deserialize<Block[]>(Block, res.data.blockchain),
+              deserialize<Address[]>(Address, res.data.addresses)
+         )
+    )))
+    {
       res.json(`Node ${nodeId} has reached a consensus on a new state.`);
     } else {
       res.json(`Node ${nodeId} hasn't reached a consensus on the existing state.`);
@@ -391,8 +537,26 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   res.status(500);
 });
 
+
+app.put('/address', (req: express.Request, res: express.Response) => {
+    // create a new blockchain address
+    // and registers it on the blockchain
+    const prettyName = req.body.prettyName;
+    const address = new Address(prettyName);
+
+    const result = blockchain.addANewAddress(address);
+    // todo, consider result
+    res.json(`added a new address ${address.publicKey} with a pretty name of ${address.prettyName}.`);
+
+    res.status(200);
+    return;
+});
+
 if (!module.parent) {
   app.listen(PORT);
 
   console.log(`Web server started on port ${PORT}. Node ID is: ${nodeId}`);
 }
+
+
+
