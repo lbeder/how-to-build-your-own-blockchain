@@ -18,7 +18,7 @@ This is a great opportunity, for any developer, interested in learning more abou
 
 3. There is no entry fee and no purchase necessary to enter this competition.
 
-4. To enter, entrants must go in person to the competition Github during the open period, open a pull request and send an Email to event@orbs.network with the pull request link and the entrants details. Incomplete or automated entries will be disqualified. Multiple entries from the same IP address, same email address or from automated competition entry services are invalid.
+4. To enter, entrants must go in person to the competition Github during the open period, open a pull request and send an Email to events@orbs.network with the pull request link and the entrants details. Incomplete or automated entries will be disqualified. Multiple entries from the same IP address, same email address or from automated competition entry services are invalid.
 
 5. Closing date for entry will be 16/1/2018. After this date, no further entries to the competition will be permitted.
 
