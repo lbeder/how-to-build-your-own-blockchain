@@ -67,7 +67,7 @@ export class Node {
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
-  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
+  public static  GENESIS_BLOCK:Block; 
 
   public static readonly DIFFICULTY = 4;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
@@ -81,7 +81,10 @@ export class Blockchain {
   public transactionPool: Array<Transaction>;
   private storagePath: string;
 
-  constructor(nodeId: string) {
+  constructor(nodeId: string, votingOptions: string) {
+    //Set the genesis block to hold the available votion options
+    Blockchain.GENESIS_BLOCK = new Block(0, [], 0, 0,votingOptions);
+
     this.nodeId = nodeId;
     this.nodes = new Set<Node>();
     this.transactionPool = [];
@@ -275,7 +278,8 @@ const ARGS = parseArgs(process.argv.slice(2));
 const PORT = ARGS.port || 3000;
 const app = express();
 const nodeId = ARGS.id || uuidv4();
-const blockchain = new Blockchain(nodeId);
+const votingOptions = ARGS.voting_options || 'yes,no'
+const blockchain = new Blockchain(nodeId, votingOptions);
 
 // Set up bodyParser:
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -389,6 +393,11 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   });
 
   res.status(500);
+});
+
+//get the voting options - Stored on the genesis block
+app.get("/voting_options", (req: express.Request, res: express.Response) => {
+  res.json(blockchain.blocks[0].prevBlock);
 });
 
 if (!module.parent) {
