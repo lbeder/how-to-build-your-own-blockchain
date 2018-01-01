@@ -21,25 +21,30 @@ export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
   public value: number;
+  public id: string;
+  // TODO: add sender signature
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number, id:string) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
+    this.id = id;
   }
 }
 
 export class Block {
   public blockNumber: number;
   public transactions: Array<Transaction>;
+  public numberOfPendingTransactions : number;
   public timestamp: number;
   public nonce: number;
   public prevBlock: string;
 
-  constructor(blockNumber: number, transactions: Array<Transaction>, timestamp: number, nonce: number,
-    prevBlock: string) {
+  constructor(blockNumber: number, transactions: Array<Transaction>, 
+    numberOfPendingTransactions: number, timestamp: number, nonce: number, prevBlock: string) {
     this.blockNumber = blockNumber;
     this.transactions = transactions;
+    this.numberOfPendingTransactions = numberOfPendingTransactions
     this.timestamp = timestamp;
     this.nonce = nonce;
     this.prevBlock = prevBlock;
@@ -67,7 +72,7 @@ export class Node {
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
-  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
+  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, 0, "fiat lux");
 
   public static readonly DIFFICULTY = 4;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
@@ -218,7 +223,9 @@ export class Blockchain {
   private mineBlock(transactions: Array<Transaction>): Block {
     // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
-    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
+    // TODO: write the real number of transactions
+    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, 0, Blockchain.now(),
+     0, lastBlock.sha256());
 
     while (true) {
       const pow = newBlock.sha256();
@@ -236,14 +243,19 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number): string {
+    const transactionId = uuidv4();
+    // TODO: check UUID isnt dup    
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, transactionId));
+    return transactionId;
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
     // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
+    const transactionId = uuidv4()
+    // TODO: check UUID isnt dup
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, transactionId),
       ...this.transactionPool];
 
     // Mine the transactions in a new block.
@@ -332,9 +344,9 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value);
+  const id = blockchain.submitTransaction(senderAddress, recipientAddress, value);
 
-  res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
+  res.json(`Transaction with id ${id} from ${senderAddress} to ${recipientAddress} was added successfully`);
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
