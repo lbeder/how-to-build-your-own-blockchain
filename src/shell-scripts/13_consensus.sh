@@ -34,12 +34,22 @@ curl -X POST -H "Content-Type: application/json" -d "{
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE2}\",
  \"url\": \"${NODE2_URL}\"
+}" "${NODE2_URL}/nodes" -w "\n"
+
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"id\": \"${NODE2}\",
+ \"url\": \"${NODE2_URL}\"
 }" "${NODE3_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE1}\",
  \"url\": \"${NODE1_URL}\"
 }" "${NODE2_URL}/nodes" -w "\n"
+
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"id\": \"${NODE1}\",
+ \"url\": \"${NODE1_URL}\"
+}" "${NODE1_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE1}\",
@@ -50,50 +60,55 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE3}\",
  \"url\": \"${NODE3_URL}\"
 }" "${NODE2_URL}/nodes" -w "\n"
+
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"id\": \"${NODE3}\",
+ \"url\": \"${NODE3_URL}\"
+}" "${NODE3_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE3}\",
  \"url\": \"${NODE3_URL}\"
 }" "${NODE1_URL}/nodes" -w "\n"
 
-# # Register Accounts on Nodes
-# echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to continue..." && echo -e
+# Register Accounts on Nodes
+echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to continue..." && echo -e
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Alice\",
-#  \"balance\": \"43\",
-#  \"type\": \"external_account\"
-# }" "${NODE1_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Alice\",
+ \"balance\": \"43\",
+ \"type\": \"external_account\"
+}" "${NODE1_URL}/createAccount" -w "\n"
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Bob\",
-#  \"balance\": \"100\",
-#  \"type\": \"external_account\"
-# }" "${NODE1_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Bob\",
+ \"balance\": \"100\",
+ \"type\": \"external_account\"
+}" "${NODE1_URL}/createAccount" -w "\n"
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Ben Affleck\",
-#  \"balance\": \"4000\",
-#  \"type\": \"contract_account\"
-# }" "${NODE2_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Ben Affleck\",
+ \"balance\": \"4000\",
+ \"type\": \"contract_account\"
+}" "${NODE2_URL}/createAccount" -w "\n"
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Selena Gomez\",
-#  \"balance\": \"232\",
-#  \"type\": \"external_account\"
-# }" "${NODE2_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Selena Gomez\",
+ \"balance\": \"232\",
+ \"type\": \"external_account\"
+}" "${NODE2_URL}/createAccount" -w "\n"
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Gal Gadot\",
-#  \"balance\": \"987\",
-#  \"type\": \"contract_account\"
-# }" "${NODE3_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Gal Gadot\",
+ \"balance\": \"987\",
+ \"type\": \"contract_account\"
+}" "${NODE3_URL}/createAccount" -w "\n"
 
-# curl -X POST -H "Content-Type: application/json" -d "{
-#  \"address\": \"Eve\",
-#  \"balance\": \"337\",
-#  \"type\": \"external_account\"
-# }" "${NODE3_URL}/createAccount" -w "\n"
+curl -X POST -H "Content-Type: application/json" -d "{
+ \"address\": \"Eve\",
+ \"balance\": \"337\",
+ \"type\": \"external_account\"
+}" "${NODE3_URL}/createAccount" -w "\n"
 
 # Submit 2 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
