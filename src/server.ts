@@ -12,7 +12,7 @@ import { URL } from "url";
 import axios from "axios";
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
-import { Address } from "./address";
+import { Address, CONTRACT_ACCOUNT } from "./address";
 import { Contract } from "./contract";
 import { Transaction } from "./transaction";
 import { Block } from "./block";
@@ -34,9 +34,42 @@ const replacer = (key: any, value: any) => {
   return value;
 };
 
+function objToString(obj: any, ndeep: number): any {
+  if (obj == null) {
+    return String(obj);
+  }
+  switch (typeof obj) {
+    case "string":
+      return '"' + obj + '"';
+    case "function":
+      return obj.name || obj.toString();
+    case "object":
+      var indent = Array(ndeep || 1).join("\t"),
+        isArray = Array.isArray(obj);
+      return (
+        "{["[+isArray] +
+        Object.keys(obj)
+          .map(function(key) {
+            return (
+              "\n\t" +
+              indent +
+              key +
+              ": " +
+              objToString(obj[key], (ndeep || 1) + 1)
+            );
+          })
+          .join(",") +
+        "\n" +
+        indent +
+        "}]"[+isArray]
+      );
+    default:
+      return obj.toString();
+  }
+}
+
 const getConsensus = (req: express.Request, res: express.Response) => {
   const requests = blockchain.nodes
-    .toArray()
     .filter(node => node.id !== nodeId)
     .map(node => {
       const req = axios.get(`${node.url}blocks`);
@@ -147,8 +180,8 @@ app.get("/contracts", (req: express.Request, res: express.Response) => {
 
 // TODO: Omer
 app.post("/deployContract", (req: express.Request, res: express.Response) => {
-  const { contract } = req.body;
-  blockchain.submitContract(eval(contract));
+  const { contractName, contract, value, type } = req.body;
+  blockchain.submitContract(contractName, value, type, eval(contract));
   res.json(JSON.stringify(`${nodeId} deployed contracts!`));
 });
 
@@ -156,33 +189,18 @@ app.post("/deployContract", (req: express.Request, res: express.Response) => {
 app.post(
   "/propogateContract",
   (req: express.Request, res: express.Response) => {
-    const {
-      contractName,
-      senderAddress,
-      recipientAddress,
-      value,
-      gas,
-      type,
-      data
-    } = req.body;
-
-    // const unevaluatedContract = Contract.fetchContractContent(contractName);
+    const { contractName, value, type, data } = req.body;
     const contract = eval(data);
-    blockchain.submitContract(
-      senderAddress,
-      recipientAddress,
-      value,
-      gas,
-      type,
-      data
-    );
+    blockchain.submitContract(contractName, value, type, data);
 
     const requests = blockchain.nodes
-      .toArray()
       .filter(node => node.id !== nodeId)
       .map(node =>
         axios.post(`${node.url}deployContract`, {
-          contract: data
+          contractName: contractName,
+          contract: data,
+          value: value,
+          type: type
         })
       );
 
@@ -212,29 +230,21 @@ app.post(
   }
 );
 
-// TODO: Omer
-app.post("/contracts/:id", (req: express.Request, res: express.Response) => {
-  const stringifiedContract = req.body.data;
-
-  if (!stringifiedContract) {
-    res.json("Invalid stringified contract");
-    res.status(500);
-  }
-
-  // TODO: Check if contract already exists before adding it
-  blockchain.submitContract(stringifiedContract);
-  res.json(
-    `The following contract was added successfully, ${stringifiedContract}`
-  );
-});
-
 // Show all transactions in the transaction pool.
 app.get("/transactions", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.transactionPool));
 });
 
 app.post("/transactions", (req: express.Request, res: express.Response) => {
-  const { senderAddress, recipientAddress, type } = req.body;
+  const {
+    senderAddress,
+    recipientAddress,
+    type,
+    method,
+    args,
+    gas,
+    data
+  } = req.body;
   const value = Number(req.body.value);
 
   if (!senderAddress || !recipientAddress || !value) {
@@ -243,7 +253,16 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value);
+  blockchain.submitTransaction(
+    senderAddress,
+    recipientAddress,
+    value,
+    type,
+    method,
+    args,
+    gas,
+    data
+  );
 
   res.json(
     `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`
@@ -251,7 +270,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
-  res.json(serialize(blockchain.nodes.toArray()));
+  res.json(serialize(blockchain.nodes));
 });
 
 app.post("/nodes", (req: express.Request, res: express.Response) => {
@@ -275,21 +294,50 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 });
 
 app.put(
-  "/mutateContract/:contractId",
+  "/mutateContract/:address",
   (req: express.Request, res: express.Response) => {
-    const contractId = req.params.contractId;
-    const contractIdx = blockchain.contracts.findIndex(
-      c => (c.id = contractId)
-    );
-
-    if (contractIdx) {
-      res.json(`Contract ${contractId} not found`);
+    const { address } = req.params;
+    const { method } = req.body;
+    let parsedContract;
+    const nodeIdx = blockchain.nodes.findIndex(node => node.id === nodeId);
+    if (nodeIdx === -1) {
+      res.json(`Invalid ${nodeId}...`);
       res.status(404);
       return;
     }
 
+    // Find contract by address
+    const contractIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
+      account =>
+        (account.address = address && account.type === CONTRACT_ACCOUNT)
+    );
+    if (contractIdx === -1) {
+      res.json(`Invalid ${contractIdx}...`);
+      res.status(404);
+      return;
+    }
+
+    // Parse Contract Data (Code)
+    if (blockchain.nodes[nodeIdx].accounts[contractIdx].nonce === 0) {
+      parsedContract = eval(
+        blockchain.nodes[nodeIdx].accounts[contractIdx].data
+      );
+    } else {
+      parsedContract = JSON.parse(
+        blockchain.nodes[nodeIdx].accounts[contractIdx].data,
+        reviver
+      );
+    }
+
     // Mutate Data
-    blockchain.contracts[contractIdx].incrementValue(111, 111);
+    parsedContract[method]();
+
+    // Update Contract State
+    blockchain.nodes[nodeIdx].accounts[contractIdx].data = JSON.stringify(
+      parsedContract,
+      replacer
+    );
+    blockchain.nodes[nodeIdx].accounts[contractIdx].nonce++;
 
     // Create Transaction
     const {
@@ -297,7 +345,6 @@ app.put(
       recipientAddress,
       value,
       methodType,
-      method,
       args,
       gas
     } = req.body;
@@ -310,11 +357,15 @@ app.put(
       methodType,
       method,
       args,
-      gas
+      gas,
+      "NONE"
     );
 
+    // TODO: mine transaction...
+
     // Init consensus
-    getConsensus(req, res);
+    // getConsensus(req, res);
+    res.json(blockchain.nodes[nodeIdx].accounts[contractIdx]);
   }
 );
 
@@ -322,14 +373,21 @@ app.get(
   "/contract/:contractId/abi",
   (req: express.Request, res: express.Response) => {
     const contractId = req.params.contractId;
-    const contract = blockchain.contracts.find(
-      contract => contract.id === contractId
+    const nodeIdx = blockchain.nodes.findIndex(node => node.id === nodeId);
+    const contractIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
+      account => (account.id = contractId)
     );
-    if (!contract) {
+    if (contractIdx === -1) {
       res.json(`Oops...Contract ${contractId} does not exist`);
       res.status(404);
     }
-    res.json(JSON.stringify(contract.abi(), replacer, 4));
+    res.json(
+      JSON.stringify(
+        this.nodes[nodeIdx].accounts[contractIdx].data.abi(),
+        replacer,
+        4
+      )
+    );
     //  blockchain.contracts.find
   }
 );

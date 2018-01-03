@@ -10,12 +10,7 @@ export class Account {
   public publicKey: string;
   private privateKey: string;
 
-  constructor(
-    address: Address,
-    balance: number,
-    type = EXTERNAL_ACCOUNT,
-    contractId = "None"
-  ) {
+  constructor(address: Address, balance: number, type: string) {
     this.address = address;
     this.balance = balance;
     this.type = type;
@@ -24,22 +19,16 @@ export class Account {
 }
 
 export class ExternalAccount extends Account {
-  public id: string;
   constructor(address: Address, balance: number, type: string, id: string) {
     super(address, balance, type);
-    this.id = id;
   }
 }
 
 export class ContractAccount extends Account {
-  public contractId: string;
-  constructor(
-    address: Address,
-    balance: number,
-    type: string,
-    contractId: string
-  ) {
+  public data: any;
+  public updatedData: any;
+  constructor(address: Address, balance: number, type: string, data: any) {
     super(address, balance, type);
-    this.contractId = contractId;
+    this.data = data;
   }
 }

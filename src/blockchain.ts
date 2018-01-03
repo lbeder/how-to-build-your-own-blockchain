@@ -28,17 +28,15 @@ export class Blockchain {
   public static readonly MINING_REWARD = 50;
 
   public nodeId: string;
-  public nodes: Set<Node>;
+  public nodes: Array<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
-  public contracts: Array<any>;
   private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
-    this.nodes = new Set();
+    this.nodes = [];
     this.transactionPool = [];
-    this.contracts = Array<String>();
     this.storagePath = path.resolve(
       __dirname,
       "../",
@@ -51,7 +49,7 @@ export class Blockchain {
 
   // Registers new node.
   public register(node: Node): boolean {
-    this.nodes.add(node);
+    this.nodes.push(node);
     // TODO: proper return value
     return true;
   }
@@ -301,41 +299,43 @@ export class Blockchain {
   }
 
   // TODO: Omer
-  public getContracts(): Array<String> {
-    return this.contracts;
+  public getContracts(): any {
+    const currentNodeIdx = this.nodes.findIndex(
+      node => node.id === this.nodeId
+    );
+    return this.nodes[currentNodeIdx].accounts.filter(
+      account => account.type === CONTRACT_ACCOUNT
+    );
   }
 
   // TODO: Omer
   public submitContract(
-    senderAddress: string,
-    recipientAddress: string,
+    contractName: string,
     value: number,
-    gas: number,
     type: string,
     data: string
   ): any {
     const parsedContract = eval(data);
-    if (
-      this.contracts.findIndex(
-        contract => contract.id === parsedContract.id
-      ) !== -1
-    ) {
-      throw new Error(`Contract already exists`);
-    }
+    const currentNodeIdx = this.nodes.findIndex(
+      node => node.id === this.nodeId
+    );
+    this.nodes[currentNodeIdx].accounts.push(
+      new ContractAccount(contractName, value, type, data)
+    );
+
+    // TODO: check if contract exists -> if so,  throw new Error(`Contract already exists`);
 
     // Hash contract data and submit to blockchain as transaction
     this.submitTransaction(
-      senderAddress,
-      recipientAddress,
+      contractName,
+      "None",
       value, // this is the contract balance
       type,
       "None",
       "None",
-      gas,
+      -1,
       data
     );
-
-    this.contracts.push(parsedContract);
     return parsedContract;
   }
 }
