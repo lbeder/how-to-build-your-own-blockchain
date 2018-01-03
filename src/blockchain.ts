@@ -4,7 +4,14 @@ import { Set } from "typescript-collections";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
-import { Address, Account } from "./address";
+import {
+  Address,
+  Account,
+  ExternalAccount,
+  ContractAccount,
+  EXTERNAL_ACCOUNT,
+  CONTRACT_ACCOUNT
+} from "./address";
 import { Contract } from "./contract";
 import { Block } from "./block";
 import { Transaction } from "./transaction";
@@ -53,7 +60,13 @@ export class Blockchain {
     // get Node by nodeId
     const node = this.nodes.forEach(node => {
       if (node.id === this.nodeId) {
-        node.accounts.push(new Account(address, balance, type));
+        type === EXTERNAL_ACCOUNT
+          ? node.accounts.push(
+              new ExternalAccount(address, balance, type, "randomId")
+            )
+          : node.accounts.push(
+              new ContractAccount(address, balance, type, "randomId")
+            );
       }
     });
   }
@@ -228,7 +241,8 @@ export class Blockchain {
     methodType: string,
     method: string,
     args: string,
-    gas: number
+    gas: number,
+    data: string
   ) {
     this.transactionPool.push(
       new Transaction(
@@ -238,7 +252,8 @@ export class Blockchain {
         methodType,
         method,
         args,
-        gas
+        gas,
+        data
       )
     );
   }
@@ -291,7 +306,15 @@ export class Blockchain {
   }
 
   // TODO: Omer
-  public submitContract(parsedContract: any): any {
+  public submitContract(
+    senderAddress: string,
+    recipientAddress: string,
+    value: number,
+    gas: number,
+    type: string,
+    data: string
+  ): any {
+    const parsedContract = eval(data);
     if (
       this.contracts.findIndex(
         contract => contract.id === parsedContract.id
@@ -299,6 +322,18 @@ export class Blockchain {
     ) {
       throw new Error(`Contract already exists`);
     }
+
+    // Hash contract data and submit to blockchain as transaction
+    this.submitTransaction(
+      senderAddress,
+      recipientAddress,
+      value, // this is the contract balance
+      type,
+      "None",
+      "None",
+      gas,
+      data
+    );
 
     this.contracts.push(parsedContract);
     return parsedContract;

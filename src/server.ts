@@ -156,17 +156,33 @@ app.post("/deployContract", (req: express.Request, res: express.Response) => {
 app.post(
   "/propogateContract",
   (req: express.Request, res: express.Response) => {
-    const { contractName, senders } = req.body;
-    const unevaluatedContract = Contract.fetchContractContent(contractName);
-    const contract = eval(unevaluatedContract);
-    blockchain.submitContract(contract);
+    const {
+      contractName,
+      senderAddress,
+      recipientAddress,
+      value,
+      gas,
+      type,
+      data
+    } = req.body;
+
+    // const unevaluatedContract = Contract.fetchContractContent(contractName);
+    const contract = eval(data);
+    blockchain.submitContract(
+      senderAddress,
+      recipientAddress,
+      value,
+      gas,
+      type,
+      data
+    );
 
     const requests = blockchain.nodes
       .toArray()
       .filter(node => node.id !== nodeId)
       .map(node =>
         axios.post(`${node.url}deployContract`, {
-          contract: unevaluatedContract
+          contract: data
         })
       );
 

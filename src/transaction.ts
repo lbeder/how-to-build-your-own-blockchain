@@ -2,28 +2,31 @@ import { Address } from "./address";
 export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
-  public value: number;
-  public methodType: string;
+  public balance: number;
+  public type: string;
   public method: any;
   public args: any;
   public gas: number;
+  public data: string;
 
   constructor(
     senderAddress: Address,
     recipientAddress: Address,
-    value: number,
-    methodType: string = "None", // TODO: refactor default values to constants or nullable
+    balance: number,
+    type: string = "None", // Initializing contract, mutating value, transfer of funds etc...
     method: any = "None",
     args: any = "None",
-    gas: number = -1
+    gas: number = -1,
+    data: string = "None"
   ) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
-    this.value = value;
-    this.methodType = methodType;
+    this.balance = balance;
+    this.type = type;
     this.method = method;
     this.args = args;
     this.gas = gas;
+    this.data = data;
   }
 }
 
