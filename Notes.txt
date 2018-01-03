@@ -1,0 +1,81 @@
+*** Blockchain:
+We'll define an initial class with the following interfaces.
+
+1) We'd store all the blocks in the blockchain.
+2) We'd store the pool of all of the transactions waiting to be processed.
+3) We'll differentiate the current instance from other instances.
+4) Method for creating new blocks
+5) Method for submisssion of new transactions into the pool.
+
+*** Blocks:
+What should our blocks contain?
+
+1) Block number / height
+2) transactions
+3) Timestamp - block creation time 
+4) Nonce: arbitrary number that can only be used once.
+5) The hash of the previous block: by using the previous hash, we make the blockchain immutable.
+
+*** Transactions:
+What should our transactions contain?
+
+1) The public address of the sender
+2) The public address of the recipient
+3) The value of the transaction
+
+*** Submitting new transactions:
+New transactions will be first submitted to the in-memory transactions pool.
+This is also referred to as the "mempool".
+
+*** Proof of Work:
+What is PoW?
+
+* A method to achieve trustless consensus
+* A key feature of PoW is asymmetry; the work must be hard (but feasible)
+on the requester side, but easy to check for the service provider.
+* Everyone can mine a block. "ONE CPU - one vote" (is it?)
+
+*** Longest Chain:
+Satoshi -> We'll always choose the longest chain, which is the chain with the most
+invested computation.
+
+*** Creating new blocks:
+
+Once we can mine / create new blocks, new block creation is pretty straightforward.
+
+1) Fetch transactions from the mempool. We'll assume that blocks are limitless. (Which is of course not the case!)
+2) Keep mining a block with these transactions until a valid PoW is found.
+3) Append the new block to the blockchain.
+
+*** Storing the blockchain
+In order for the blockchain to be more robust, we will add support for writing and reading
+the blockchain from storage.
+
+-> What if someone modifies the data on the disk? We can verify hashes, starting from the genesis block!
+-> What if someone modifies the genesis block? We'll hardcode it directly in the protocol.
+-> What if we were offline for a very long time? We'll bootstrap from other miners (not in this talk...)
+
+*** Mining Blocks
+
+Why should anyone mine a block? We bribe them with rewards!
+
+*** Decentralizing the blockchain
+
+In order to make our blockchain more decentralized, we'd want to:
+
+1) Support multiple nodes (avoid single point of failure, faulty nodes, improve liveliness of the system, etc.)
+2) Don't blindly trust the output of the other nodes - validate everything ourselves
+3) Reach a consensus about the state of the blockchain among the ndoes.
+
+*** Node Discovery
+
+-> Let's add an API for every node to be aware of other nodes. 
+-> Since we're developing a permissionsless blockchain - everyone is free to join.
+
+*** Reach a consensus
+-> Now, when we have a naive way for the nodes to be aware of each other - they can
+communicate together.
+In order to reach a consensus on the "true" state of the blockchain, every node will:
+1) Get the whole blockchain from every other node.
+2) If the other blockchain is both longer and valid - use it instead.
+

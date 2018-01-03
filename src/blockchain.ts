@@ -4,7 +4,8 @@ import { Set } from "typescript-collections";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
-import { Address } from "./address";
+import { Address, Account } from "./address";
+import { Contract } from "./contract";
 import { Block } from "./block";
 import { Transaction } from "./transaction";
 import { Node } from "./node";
@@ -23,13 +24,14 @@ export class Blockchain {
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
+  public contracts: Array<any>;
   private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
-    this.nodes = new Set<Node>();
+    this.nodes = new Set();
     this.transactionPool = [];
-
+    this.contracts = Array<String>();
     this.storagePath = path.resolve(
       __dirname,
       "../",
@@ -42,7 +44,18 @@ export class Blockchain {
 
   // Registers new node.
   public register(node: Node): boolean {
-    return this.nodes.add(node);
+    this.nodes.add(node);
+    // TODO: proper return value
+    return true;
+  }
+
+  public createAccount(address: Address, balance: number, type: string) {
+    // get Node by nodeId
+    const node = this.nodes.forEach(node => {
+      if (node.id === this.nodeId) {
+        node.accounts.push(new Account(address, balance, type));
+      }
+    });
   }
 
   // Saves the blockchain to the disk.
@@ -103,8 +116,7 @@ export class Blockchain {
         }
 
         // Verify the difficutly of the PoW.
-        //
-        // TODO: what if the diffuclty was adjusted?
+        // TODO: what if the diffuclty was adjusted? We can store the previous level of difficulty and compare to that. Then update the hash with a new transaction for consensus...?
         if (!this.isPoWValid(current.sha256())) {
           throw new Error(
             `Invalid previous block hash's difficutly for block #${i}!`
@@ -187,6 +199,7 @@ export class Blockchain {
       lastBlock.sha256()
     );
 
+    // Indefinitely until we find valid proof of work
     while (true) {
       const pow = newBlock.sha256();
       console.log(
@@ -201,23 +214,40 @@ export class Blockchain {
       newBlock.nonce++;
     }
 
+    // TODO: Broadcast solution to all nodes on network
     return newBlock;
   }
 
-  // Submits new transaction
+  // Submits new transaction to "mempool"
+  // TODO: Is transaction valid? Does sender have adequate funds?
+  // TODO: Is this transaction already in the "mempool"?
   public submitTransaction(
     senderAddress: Address,
     recipientAddress: Address,
-    value: number
+    value: number,
+    methodType: string,
+    method: string,
+    args: string,
+    gas: number
   ) {
     this.transactionPool.push(
-      new Transaction(senderAddress, recipientAddress, value)
+      new Transaction(
+        senderAddress,
+        recipientAddress,
+        value,
+        methodType,
+        method,
+        args,
+        gas
+      )
     );
   }
 
-  // Creates new block on the blockchain.
   public createBlock(): Block {
-    // Add a "coinbase" transaction granting us the mining reward!
+    /*
+    We prepend this transaction, b/c this is most important, 
+    as miners need to get compensation.
+    */
     const transactions = [
       new Transaction(
         Blockchain.MINING_SENDER,
@@ -248,5 +278,29 @@ export class Blockchain {
 
   public static now(): number {
     return Math.round(new Date().getTime() / 1000);
+  }
+
+  // TODO: Omer
+  public getBlockNumber(): number {
+    return this.blocks.length;
+  }
+
+  // TODO: Omer
+  public getContracts(): Array<String> {
+    return this.contracts;
+  }
+
+  // TODO: Omer
+  public submitContract(parsedContract: any): any {
+    if (
+      this.contracts.findIndex(
+        contract => contract.id === parsedContract.id
+      ) !== -1
+    ) {
+      throw new Error(`Contract already exists`);
+    }
+
+    this.contracts.push(parsedContract);
+    return parsedContract;
   }
 }
