@@ -65,6 +65,51 @@ export class Node {
   }
 }
 
+export class TransactionPool {
+  private memPool: Array<Transaction>;
+  private diskSaveTimer: NodeJS.Timer;
+  private storagePath: string;
+
+  constructor(nodeId: string, diskSaveIntervalMs: number) {
+    this.memPool = [];
+    this.loadFromDisk();
+
+    this.storagePath = path.resolve(__dirname, "../", `${nodeId}.transactions`);
+
+    this.startDiskTimer(diskSaveIntervalMs);
+  }
+
+  public addTransaction(transaction: Transaction) {
+    this.memPool.push(transaction);
+  }
+
+  public getTransactions(): Array<Transaction> {
+    return this.memPool.slice(0);
+  }
+
+  public clear() {
+    this.memPool = [];
+  }
+
+  private startDiskTimer(diskSaveIntervalMs: number) {
+    this.diskSaveTimer = setInterval(() => {
+      this.saveToDisk();
+    }, diskSaveIntervalMs);
+  }
+
+  private saveToDisk() {
+    fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.memPool), undefined, 2), "utf8");
+  }
+
+  private loadFromDisk() {
+    this.memPool = deserialize<Transaction[]>(Transaction, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
+  }
+
+  private stopDiskTimer() {
+    clearInterval(this.diskSaveTimer);
+  }
+}
+
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
@@ -75,16 +120,18 @@ export class Blockchain {
   public static readonly MINING_SENDER = "<COINBASE>";
   public static readonly MINING_REWARD = 50;
 
+  public static readonly TRANSACTION_DISK_WRITE_INTERVAL_MS = 1000;
+
   public nodeId: string;
   public nodes: Set<Node>;
   public blocks: Array<Block>;
-  public transactionPool: Array<Transaction>;
+  public transactionPool: TransactionPool;
   private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
     this.nodes = new Set<Node>();
-    this.transactionPool = [];
+    this.transactionPool = new TransactionPool(nodeId, Blockchain.TRANSACTION_DISK_WRITE_INTERVAL_MS);
 
     this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
 
@@ -237,14 +284,14 @@ export class Blockchain {
 
   // Submits new transaction
   public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+    this.transactionPool.addTransaction(new Transaction(senderAddress, recipientAddress, value));
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
     // Add a "coinbase" transaction granting us the mining reward!
     const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
-      ...this.transactionPool];
+      ...this.transactionPool.getTransactions()];
 
     // Mine the transactions in a new block.
     const newBlock = this.mineBlock(transactions);
@@ -253,7 +300,7 @@ export class Blockchain {
     this.blocks.push(newBlock);
 
     // Remove the mined transactions.
-    this.transactionPool = [];
+    this.transactionPool.clear();
 
     // Save the blockchain to the storage.
     this.save();
