@@ -21,14 +21,20 @@ export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
   public value: number;
-  public id: string;
+  public commision : number;
+  public transaction_id: string;
+  public signature: string;
   // TODO: add sender signature
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number, id:string) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number,
+   commision: number, transaction_id:string, signature: string) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
-    this.id = id;
+    this.commision = commision;
+    this.transaction_id = transaction_id;
+    this.signature = signature;
+
   }
 }
 
@@ -84,12 +90,16 @@ export class Blockchain {
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
+  public minTransactionsLoad: number;
+  public maxTransactionsLoad: number;
   private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
     this.nodes = new Set<Node>();
     this.transactionPool = [];
+    this.minTransactionsLoad = 0;
+    this.maxTransactionsLoad = 0;
 
     this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
 
@@ -175,7 +185,7 @@ export class Blockchain {
 
   // Receives candidate blockchains, verifies them, and if a longer and valid alternative is found - uses it to replace
   // our own.
-  public consensus(blockchains: Array<Array<Block>>): boolean {
+  public blockchain_consensus(blockchains: Array<Array<Block>>): boolean {
     // Iterate over the proposed candidates and find the longest, valid, candidate.
     let maxLength: number = 0;
     let bestCandidateIndex: number = -1;
@@ -198,12 +208,55 @@ export class Blockchain {
     // Compare the candidate and consider to use it.
     if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))) {
       this.blocks = blockchains[bestCandidateIndex];
+      this.remove_consented_transactions();
       this.save();
 
       return true;
     }
 
     return false;
+  }
+
+  /**
+    This method is a simple demonstration of deciding what would be an acceptable number of
+    transactions to be included in the next block. Its real implementation would
+    match the minTransactionsLoad to a range out of a list of ranges, and choose the acceptable
+    number of transactions mapped for the chpsen range.
+  **/
+  public number_of_transactions_to_be_consented(): number {
+    const n = this.minTransactionsLoad;
+    if (n < 10)
+    {
+      return Math.min(5, n);
+    }
+    if ((10 <= n) &&  (n < 20))
+    {
+      return Math.min(10, n);
+    }
+    return Math.min(20, n);
+  }
+
+    // Receives candidate transactions lists, verifies them, and agree on the number of transactions
+    // to be included in the next block.
+    // TODO: add the node ID for each list and save the list 
+  public transactions_consensus(transaction_ids_list: Array<Array<string>>): number  {
+    // Iterate over the proposed candidates and find the longest, valid, candidate.
+    let minLength : number = this.transactionPool.length;
+    let maxLength : number = this.transactionPool.length;
+
+    for (let i = 0; i < transaction_ids_list.length; ++i) {
+      const candidate = transaction_ids_list[i];
+      if (candidate.length < minLength) {
+        minLength = candidate.length;
+      }
+      if (candidate.length > maxLength) {
+        maxLength = candidate.length;
+      }
+    }
+      this.maxTransactionsLoad = maxLength;
+      this.minTransactionsLoad = minLength;
+      
+      return minLength;
   }
 
   // Validates PoW.
@@ -220,16 +273,15 @@ export class Blockchain {
   }
 
   // Mines for block.
-  private mineBlock(transactions: Array<Transaction>): Block {
+  private mineBlock(transactions: Array<Transaction>, numb_pending_transactions : number): Block {
     // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
     // TODO: write the real number of transactions
-    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, 0, Blockchain.now(),
+    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, numb_pending_transactions, Blockchain.now(),
      0, lastBlock.sha256());
 
     while (true) {
       const pow = newBlock.sha256();
-      console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW: ${pow}!`);
@@ -243,29 +295,66 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number): string {
-    const transactionId = uuidv4();
-    // TODO: check UUID isnt dup    
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, transactionId));
-    return transactionId;
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number,
+    commision: number, transaction_id: string, signature: string) {
+    // TODO: check the transaction isnt dup    
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, commision, transaction_id, signature));
+  }
+
+  // Remove all consented transaction from our transaction pool
+  public remove_consented_transactions(){
+    let consented_transactions : Array<Transaction> = [].concat.apply([], this.blocks.map(block => block.transactions));
+    let consented_transactions_ids : Array<string> = consented_transactions.map(t => t.transaction_id);
+    
+    this.transactionPool =  this.transactionPool.filter(function (tr) {
+      return !consented_transactions_ids.find(function (tid){return tid == tr.transaction_id});
+    }); 
+    console.log(`Node ${this.nodeId}: Now pending ${this.transactionPool.length} transactions.`)
+  }
+
+  public choose_lucrative_transactions(n: number): Array<Transaction> {
+    if (n <= 0)
+    {
+      return new Array<Transaction>();
+    }
+
+    this.transactionPool.sort(function(x,y){
+      return (x.commision > y.commision) ? -1 : ((x.commision < y.commision) ? 1 : 0);});
+
+    return this.transactionPool.slice(0, n);
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
+    // Get the number of transactions to be included in this block
+    const number_of_transactions_to_consent = this.number_of_transactions_to_be_consented();
+    // Reduce 1 in order to include our prize transaction
+    const number_of_transactions_to_take_from_pool = number_of_transactions_to_consent - 1;
+    const number_of_pending_transactions = this.transactionPool.length - number_of_transactions_to_take_from_pool;
+    const chosen_transactions = this.choose_lucrative_transactions(number_of_transactions_to_take_from_pool);
+
+    console.log(`Mining when number of transactions ranges between ${this.minTransactionsLoad} and ${this.maxTransactionsLoad}`);
+
     // Add a "coinbase" transaction granting us the mining reward!
-    const transactionId = uuidv4()
-    // TODO: check UUID isnt dup
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, transactionId),
-      ...this.transactionPool];
+    const transaction_id = uuidv4()
+    // TODO: sign for real
+    const signature = uuidv4()
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, 0, transaction_id, signature),
+      ...chosen_transactions];
 
     // Mine the transactions in a new block.
-    const newBlock = this.mineBlock(transactions);
+    const newBlock = this.mineBlock(transactions, number_of_pending_transactions);
+
+    console.log(`Mined a block that contains ${number_of_transactions_to_consent} transactions.`);
+    console.log(`Number of pending transactions: ${number_of_pending_transactions}`);
 
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
 
     // Remove the mined transactions.
-    this.transactionPool = [];
+    this.transactionPool = this.transactionPool.slice(number_of_transactions_to_take_from_pool);
+    this.minTransactionsLoad = 0;
+    this.maxTransactionsLoad = 0;
 
     // Save the blockchain to the storage.
     this.save();
@@ -333,20 +422,30 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.transactionPool));
 });
 
+// Show all transactions in the transaction pool.
+app.get("/transactions_ids", (req: express.Request, res: express.Response) => {
+  const ids = blockchain.transactionPool.map(transaction => transaction.transaction_id);
+  res.json(serialize(ids));
+});
+
 app.post("/transactions", (req: express.Request, res: express.Response) => {
   const senderAddress = req.body.senderAddress;
   const recipientAddress = req.body.recipientAddress;
   const value = Number(req.body.value);
-
-  if (!senderAddress || !recipientAddress || !value)  {
+  const commision = Number(req.body.commision);
+  const transaction_id = req.body.transaction_id;
+  const signature = req.body.signature;
+  
+  if (!senderAddress || !recipientAddress || !value || !commision || !transaction_id || !signature)  {
     res.json("Invalid parameters!");
     res.status(500);
     return;
   }
 
-  const id = blockchain.submitTransaction(senderAddress, recipientAddress, value);
-
-  res.json(`Transaction with id ${id} from ${senderAddress} to ${recipientAddress} was added successfully`);
+  blockchain.submitTransaction(senderAddress, recipientAddress, value, commision, transaction_id, signature);
+  res.json(``)
+  res.status(200);
+  return;
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
@@ -373,7 +472,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
   }
 });
 
-app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
+app.put("/nodes/blockchain_consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}blocks`));
 
@@ -385,11 +484,39 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   }
 
   axios.all(requests).then(axios.spread((...blockchains) => {
-    if (blockchain.consensus(blockchains.map(res => deserialize<Block[]>(Block, res.data)))) {
-      res.json(`Node ${nodeId} has reached a consensus on a new state.`);
+    if (blockchain.blockchain_consensus(blockchains.map(res => deserialize<Block[]>(Block, res.data)))) {
+      res.json(`Node ${nodeId} has reached a consensus on a new blockchain state.`);
     } else {
-      res.json(`Node ${nodeId} hasn't reached a consensus on the existing state.`);
+      res.json(`Node ${nodeId} hasn't reached a consensus on the existing blockchain state.`);
     }
+
+    res.status(200);
+    return;
+  })).catch(err => {
+    console.log(err);
+    res.status(500);
+    res.json(err);
+    return;
+  });
+
+  res.status(500);
+});
+
+
+app.put("/nodes/transactions_consensus", (req: express.Request, res: express.Response) => {
+  // Fetch the state of the other nodes.
+  const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}transactions_ids`));
+
+  if (requests.length === 0) {
+    res.json("There are nodes to sync with!");
+    res.status(404);
+
+    return;
+  }
+
+  axios.all(requests).then(axios.spread((...transaction_ids_list) => {
+    const length = blockchain.transactions_consensus(transaction_ids_list.map(res => deserialize<string[]>(String, res.data)))
+      res.json(`Node ${nodeId} has reached a consensus of ${length} on a new transactions state.`);
 
     res.status(200);
     return;
