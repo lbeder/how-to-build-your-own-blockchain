@@ -50,7 +50,7 @@ function submit_new_transaction_by_client {
 	transaction_id=$(cat /proc/sys/kernel/random/uuid)
 	#TODO: Sign for real
 	signature=$(cat /proc/sys/kernel/random/uuid)
-	curl -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
+	curl -s -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
 	{
 	 "senderAddress": "${1}",
 	 "recipientAddress": "${2}",
@@ -60,12 +60,12 @@ function submit_new_transaction_by_client {
 	 "signature": "${signature}"
 	}
 EOF
-) "${5}/transactions" -w "\n"
+) "${5}/transactions" -w "\n" > /dev/null
 t=("${1}" "${2}" "${3}" "${4}" "${transaction_id}" "${signature}")
 }
 
 function submit_exiting_transaction_by_client {
-	curl -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
+	curl -s -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
 	{
 	 "senderAddress": "${1}",
 	 "recipientAddress": "${2}",
@@ -75,7 +75,7 @@ function submit_exiting_transaction_by_client {
 	 "signature": "${6}"
 	}
 EOF
-) "${7}/transactions" -w "\n"
+) "${7}/transactions" -w "\n" > /dev/null
 }
 
 # Submitting transactions
@@ -112,7 +112,7 @@ curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
 # Mine 1 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining 1 block on the first node. Press any key to continue..." && echo -e
 
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+curl -s -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n" >> /dev/null
 
 
 # Reach a blockchain consensus on both of the nodes:
@@ -129,5 +129,104 @@ curl -X PUT "${NODE1_URL}/nodes/transactions_consensus" -w "\n"
 curl -X PUT "${NODE2_URL}/nodes/transactions_consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
 
-wait
+# Submitting more transactions
+echo -e && read -n 1 -s -r -p "Submit 10 transactions to every node, And 10 more to the 3rd node. Press any key to continue..." && echo -e
 
+# 10 Transactions to all nodes
+# 1
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "10" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 2
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "11" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 3
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "12" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 4
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "13" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 5
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "14" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 6
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "15" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 7
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "16" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 8
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "17" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 9
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "18" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+# 10
+submit_new_transaction_by_client "Daredevil" "Wolverine" "1000" "19" "${NODE1_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE2_URL}"
+submit_exiting_transaction_by_client ${t[*]} "${NODE3_URL}"
+
+# 10 Transactions to the third node
+# 1
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "15" "${NODE3_URL}"
+# 2
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "16" "${NODE3_URL}"
+# 3
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "17" "${NODE3_URL}"
+# 4
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "18" "${NODE3_URL}"
+# 5
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "19" "${NODE3_URL}"
+# 6
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "20" "${NODE3_URL}"
+# 7
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "21" "${NODE3_URL}"
+# 8
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "22" "${NODE3_URL}"
+# 9
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "23" "${NODE3_URL}"
+# 10
+submit_new_transaction_by_client "Daredevil" "Thor" "12345" "34" "${NODE3_URL}"
+
+
+# Reach a transactions load consensus on all the nodes:
+echo -e && read -n 1 -s -r -p "Reaching a trasactions load consensus. Press any key to continue..." && echo -e
+
+curl -X PUT "${NODE1_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE2_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
+
+# Mine 1 blocks on the third node.
+echo -e && read -n 1 -s -r -p "Mining 1 block on the third node. Press any key to continue..." && echo -e
+
+curl -s -X POST -H "Content-Type: application/json" "${NODE3_URL}/blocks/mine" -w "\n" >> /dev/null
+
+
+# Reach a blockchain consensus on all nodes:
+echo -e && read -n 1 -s -r -p "Reaching a blockchain consensus. Press any key to continue..." && echo -e
+
+curl -X PUT "${NODE1_URL}/nodes/blockchain_consensus" -w "\n"
+curl -X PUT "${NODE2_URL}/nodes/blockchain_consensus" -w "\n"
+curl -X PUT "${NODE3_URL}/nodes/blockchain_consensus" -w "\n"
+curl -X PUT "${NODE1_URL}/nodes/blockchain_consensus" -w "\n"
+
+# Reach a transactions load consensus on all the nodes:
+echo -e && read -n 1 -s -r -p "Reaching a trasactions load consensus. Press any key to continue..." && echo -e
+
+curl -X PUT "${NODE1_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE2_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
+
+# Sync Transactions:
+echo -e && read -n 1 -s -r -p "Syncing transactions. Make sure nobody is cheating!!! Press any key to continue..." && echo -e
+curl -X PUT "${NODE1_URL}/nodes/sync_full_transactions" -w "\n"
+
+wait
