@@ -227,6 +227,14 @@ curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
 
 # Sync Transactions:
 echo -e && read -n 1 -s -r -p "Syncing transactions. Make sure nobody is cheating!!! Press any key to continue..." && echo -e
+curl -X PUT "${NODE2_URL}/nodes/sync_full_transactions" -w "\n"
 curl -X PUT "${NODE1_URL}/nodes/sync_full_transactions" -w "\n"
+
+# Reach a transactions load consensus on all the nodes:
+echo -e && read -n 1 -s -r -p "Reaching a trasactions load consensus. Press any key to continue..." && echo -e
+
+curl -X PUT "${NODE1_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE2_URL}/nodes/transactions_consensus" -w "\n"
+curl -X PUT "${NODE3_URL}/nodes/transactions_consensus" -w "\n"
 
 wait
