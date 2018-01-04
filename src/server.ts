@@ -165,12 +165,73 @@ app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
 
 // TODO: Omer
 app.post("/createAccount", (req: express.Request, res: express.Response) => {
-  const { address, balance, type } = req.body;
-  blockchain.createAccount(address, balance, type);
+  const { address, balance, type, nodeId } = req.body;
+  const createdNode = blockchain.createAccount(address, balance, type, nodeId);
+
+  // Verify creation of Node
+  if (!createdNode) {
+    res.json(
+      `CreateAccount Failed to create node with address ${address}, balance ${balance}, type ${type} `
+    );
+    res.status(404);
+    return;
+  }
+
+  // Success msg
   res.json(
-    `Registered account ${address} of type ${type} with balance ${balance}`
+    `Creation of account ${address} of type ${type} with balance ${balance}`
   );
 });
+
+// TODO: Omer
+app.post(
+  "/propogateAccountCreation",
+  (req: express.Request, res: express.Response) => {
+    const { address, balance, type, nodeId } = req.body;
+    const createdNode = blockchain.createAccount(
+      address,
+      balance,
+      type,
+      nodeId
+    );
+
+    // Verify creation of node
+    if (!createdNode) {
+      res.json(
+        `PropogateAccountCreation failed to create node with address ${address}, balance ${balance}, type ${type} `
+      );
+      res.status(404);
+      return;
+    }
+
+    // Propogate account to rest of Nodes on network
+    const requests = blockchain.nodes
+      .filter(node => node.id !== nodeId)
+      .map(node =>
+        axios.post(`${node.url}createAccount`, {
+          address: address,
+          balance: balance,
+          nodeId: nodeId,
+          type: type
+        })
+      );
+
+    axios
+      .all(requests)
+      .then(axios.spread((...responses) => responses.map(res => res.data)))
+      .catch(err => {
+        console.log(err);
+        res.status(500);
+        res.json(err);
+        return;
+      });
+
+    res.status(500);
+    res.json(
+      `Propogated creation of account ${address} of type ${type} with balance ${balance}`
+    );
+  }
+);
 
 // TODO: Omer
 app.get("/contracts", (req: express.Request, res: express.Response) => {

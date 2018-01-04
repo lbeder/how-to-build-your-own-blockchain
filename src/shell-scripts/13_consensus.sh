@@ -77,38 +77,44 @@ echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to c
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Alice\",
  \"balance\": \"43\",
- \"type\": \"external_account\"
-}" "${NODE1_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"A\"
+}" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Bob\",
  \"balance\": \"100\",
- \"type\": \"external_account\"
-}" "${NODE1_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"B\"
+}" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Ben Affleck\",
  \"balance\": \"4000\",
- \"type\": \"contract_account\"
-}" "${NODE2_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"C\"
+}" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Selena Gomez\",
  \"balance\": \"232\",
- \"type\": \"external_account\"
-}" "${NODE2_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"A\"
+}" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Gal Gadot\",
  \"balance\": \"987\",
- \"type\": \"contract_account\"
-}" "${NODE3_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"C\"
+}" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Eve\",
  \"balance\": \"337\",
- \"type\": \"external_account\"
-}" "${NODE3_URL}/createAccount" -w "\n"
+ \"type\": \"external_account\",
+ \"nodeId\": \"B\"
+}" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
 # Submit 2 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e

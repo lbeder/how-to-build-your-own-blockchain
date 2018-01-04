@@ -54,10 +54,15 @@ export class Blockchain {
     return true;
   }
 
-  public createAccount(address: Address, balance: number, type: string) {
-    // get Node by nodeId
+  public createAccount(
+    address: Address,
+    balance: number,
+    type: string,
+    nodeId: string
+  ): any {
+    let createdNode = undefined;
     const node = this.nodes.forEach(node => {
-      if (node.id === this.nodeId) {
+      if (node.id === nodeId) {
         type === EXTERNAL_ACCOUNT
           ? node.accounts.push(
               new ExternalAccount(address, balance, type, "randomId")
@@ -65,8 +70,10 @@ export class Blockchain {
           : node.accounts.push(
               new ContractAccount(address, balance, type, "randomId")
             );
+        createdNode = node.accounts[node.accounts.length - 1];
       }
     });
+    return createdNode;
   }
 
   // Saves the blockchain to the disk.
