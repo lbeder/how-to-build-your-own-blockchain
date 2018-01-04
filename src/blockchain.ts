@@ -54,6 +54,7 @@ export class Blockchain {
     return true;
   }
 
+  // TODO: Omer
   public createAccount(
     address: Address,
     balance: number,
@@ -70,6 +71,18 @@ export class Blockchain {
           : node.accounts.push(
               new ContractAccount(address, balance, type, "randomId")
             );
+
+        // Submit Account_Creation Transaction
+        this.submitTransaction(
+          this.nodeId,
+          address,
+          balance,
+          "CREATE_ACCOUNT",
+          "NONE",
+          "NONE",
+          0,
+          "NONE"
+        );
         createdNode = node.accounts[node.accounts.length - 1];
       }
     });

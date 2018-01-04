@@ -120,7 +120,9 @@ curl -X POST -H "Content-Type: application/json" -d "{
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
 curl -X POST -H "Content-Type: application/json" -d '{
- "balance": "1000",
+ "senderAddress": "DavinciPaintingContract",
+ "recipientAddress": "Eve",
+ "value": "12345",
  "type": "contract_account",
  "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
