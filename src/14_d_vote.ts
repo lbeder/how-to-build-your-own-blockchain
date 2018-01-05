@@ -21,11 +21,15 @@ export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
   public value: number;
+  public transactionType: string;
+  public vote: string
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number,transactionType: string, vote: string ) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
+    this.transactionType = transactionType;
+    this.vote = vote; 
   }
 }
 
@@ -239,14 +243,14 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number, type: string, vote: string) {
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, type, vote));
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
     // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, "REWARD", ""),
       ...this.transactionPool];
 
     // Mine the transactions in a new block.
@@ -272,6 +276,48 @@ export class Blockchain {
     return Math.round(new Date().getTime() / 1000);
   }
 }
+
+/**
+ * check if a vote selection is part of the options defined in the GENESIS block
+ * @param value - vote selection 
+ */
+function isValidVote(value:string) {
+  return Blockchain.GENESIS_BLOCK.prevBlock.toLowerCase().includes(value.toLowerCase())
+}
+
+/**
+ * 
+ * @param voter check if a voter has already took a vote
+ * we do this by:
+ * 1. going over all of the transcations within the blockchain, looking for a transaction which 
+ * contains this voter (sendingAddress)
+ * 2. going over the transaction pool - looking at pre-mined transactions  
+ */
+function isValidVoter(voter:string) {
+
+  for (let i = 0; i < blockchain.blocks.length; ++i) {
+    console.log("validating voter ",voter);
+    let transactions= blockchain.blocks[i].transactions;
+    
+    for (let j=0; j< transactions.length; j++ ) {
+      if (transactions[j].senderAddress == voter) {
+        console.log('Voter ',voter,'has already voted in block ',i)
+        return false
+      }
+    }
+  }
+
+  for (let i=0; i< blockchain.transactionPool.length;i++ ) {
+    if (blockchain.transactionPool[i].senderAddress == voter) {
+      console.log('Voter ',voter,'has already voted. Vote found it transaction pool ',i);
+      return false
+    }
+  }
+
+
+  return true;
+}
+
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));
@@ -336,7 +382,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value);
+  blockchain.submitTransaction(senderAddress, recipientAddress, value, 'REWARD', '');
 
   res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
 });
@@ -368,7 +414,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}blocks`));
-
+  // console.log('consensus: request-',requests)
   if (requests.length === 0) {
     res.json("There are nodes to sync with!");
     res.status(404);
@@ -405,3 +451,42 @@ if (!module.parent) {
 
   console.log(`Web server started on port ${PORT}. Node ID is: ${nodeId}`);
 }
+
+//Allow a user to place his vote on the block chain
+app.post("/vote", (req: express.Request, res: express.Response) => {
+  const voterId = req.body.voterId;
+  //const recipientAddress = req.body.recipientAddress;
+  const value:string = req.body.votingValue;
+
+  if (!voterId )  {
+    res.json("Can't complete vote - Missing voter Id");
+    res.status(500);
+    return;
+  }
+  
+  if (!value)  {
+    res.json("Can't complete vote - you need to pick one voting optio");
+    res.status(500);
+    return;
+  }
+
+  //check if the submitted vote is a valid one by looking at the defenition in the genesis block
+  if (!isValidVote(value)) {
+    res.json("Invalid voting options. Valid options are "+Blockchain.GENESIS_BLOCK.prevBlock);
+    res.status(500);
+    return;
+  }
+
+  //check if the user has already voted
+  if (!isValidVoter(voterId)) {
+    res.json("Invalid Voter. It seems like voter has already took a vote");
+    res.status(500);
+    return;
+  }
+
+  //Add a VOTE transaction
+  console.log('submitting transaction', voterId, value);
+  blockchain.submitTransaction(voterId, '', 0, "VOTE", value);
+
+  res.json(`Your vote for \'${value}\' was added successfully`);
+});
