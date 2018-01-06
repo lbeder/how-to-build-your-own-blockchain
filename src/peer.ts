@@ -8,10 +8,10 @@ export interface Resolver {
 
 export class Peer {
   requests: Map<number, Resolver>;
-  peer: { send: (data: any) => {}; } & EventEmitter;
+  peer: { send: (data: any) => {}; on: any; off: any };
   requestId: number;
 
-  constructor(peer: { send: (data: any) => {}; } & EventEmitter) {
+  constructor(peer: { send: (data: any) => {}; on: any; off: any }) {
     this.requestId = 0;
     this.peer = peer;
     this.requests = new Map<number, Resolver>();
