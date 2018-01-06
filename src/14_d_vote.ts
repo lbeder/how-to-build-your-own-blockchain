@@ -14,6 +14,7 @@ import axios from "axios";
 
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
+import { request } from "https";
 
 export type Address = string;
 
@@ -414,7 +415,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}blocks`));
-  // console.log('consensus: request-',requests)
+  console.log('consensus: request-',requests)
   if (requests.length === 0) {
     res.json("There are nodes to sync with!");
     res.status(404);
@@ -489,4 +490,22 @@ app.post("/vote", (req: express.Request, res: express.Response) => {
   blockchain.submitTransaction(voterId, '', 0, "VOTE", value);
 
   res.json(`Your vote for \'${value}\' was added successfully`);
+
+  //transmit the transaction to all other nodes
+  const requests = blockchain.nodes.toArray().map(node => axios.post(`${node.url}vote`,{voterId:voterId,votingValue:value}));
+  if (requests.length === 0) {
+    console.log('there are no other nodes to send the vote to');
+    return;
+  }
+
+  axios.all(requests).then(axios.spread((...responses) => {
+    res.status(200);
+    return;
+  })).catch(err => {
+    console.log(err);
+    res.status(500);
+    res.json(err);
+    return;
+  });
+
 });
