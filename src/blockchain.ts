@@ -1,8 +1,7 @@
 import {Transaction, Block} from "./final";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
-import * as uuidv4 from "uuid/v4";
-import {Set} from "typescript-collections";
+import {Address} from "./final";
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
@@ -15,47 +14,12 @@ export class Blockchain {
   public static readonly MINING_REWARD = 50;
 
   public nodeId: string;
-  public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
-  private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
-    this.nodes = new Set<Node>();
     this.transactionPool = [];
-
-    // this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
-
-    // Load the blockchain from the storage.
-    this.load();
-  }
-
-  // Registers new node.
-  public register(node: Node): boolean {
-    return this.nodes.add(node);
-  }
-
-  // Saves the blockchain to the disk.
-  private save() {
-    // fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.blocks), undefined, 2), "utf8");
-    throw new Error('NOT IMPLEMENTED');
-  }
-
-  // Loads the blockchain from the disk.
-  private load() {
-    // try {
-    //   this.blocks = deserialize<Block[]>(Block, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
-    // } catch (err) {
-    //   if (err.code !== "ENOENT") {
-    //     throw err;
-    //   }
-    //
-    //   this.blocks = [Blockchain.GENESIS_BLOCK];
-    // } finally {
-    //   this.verify();
-    // }
-    throw new Error('NOT IMPLEMENTED');
   }
 
   // Verifies the blockchain.
@@ -134,8 +98,6 @@ export class Blockchain {
     // Compare the candidate and consider to use it.
     if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))) {
       this.blocks = blockchains[bestCandidateIndex];
-      this.save();
-
       return true;
     }
 
@@ -196,18 +158,11 @@ export class Blockchain {
     // Remove the mined transactions.
     this.transactionPool = [];
 
-    // Save the blockchain to the storage.
-    this.save();
-
     return newBlock;
   }
 
   public getLastBlock(): Block {
     return this.blocks[this.blocks.length - 1];
-  }
-
-  public getAllNodes() {
-    return this.nodes.toArray();
   }
 
   public static now(): number {

@@ -1,3 +1,5 @@
+// connect blockchain.nodes to simple-node
+
 import {sha256} from "js-sha256";
 import {serialize, deserialize} from "serializer.ts/Serializer";
 

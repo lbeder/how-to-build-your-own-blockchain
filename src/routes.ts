@@ -1,16 +1,7 @@
 import {deserialize, serialize} from "serializer.ts/Serializer";
-import {Node} from './final';
-import {fetch} from './fetch';
+import {Block} from './final';
 
-export function routes(app: any, blockchain: any) {
-  // app.use(bodyParser.urlencoded({ extended: false }));
-  // app.use(bodyParser.json());
-  // app.use((err: any, req: any, res: any, next: express.NextFunction) => {
-  //   console.error(err.stack);
-  //
-  //   res.status(500);
-  // });
-
+export function routes(app: any, blockchain: any, peers: any) {
   // Show all the blocks.
   app.get("/blocks", (req: any, res: any) => {
     res.json(serialize(blockchain.blocks));
@@ -66,26 +57,6 @@ export function routes(app: any, blockchain: any) {
     res.json(serialize(blockchain.nodes.toArray()));
   });
 
-  app.post("/nodes", (req: any, res: any) => {
-    const id = req.body.id;
-    const url = new URL(req.body.url);
-
-    if (!id || !url) {
-      res.json("Invalid parameters!");
-      res.status(500);
-      return;
-    }
-
-    const node = new Node(id, url);
-
-    if (blockchain.register(node)) {
-      res.json(`Registered node: ${node}`);
-    } else {
-      res.json(`Node ${node} already exists!`);
-      res.status(500);
-    }
-  });
-
   app.put("/nodes/consensus", async (req: any, res: any) => {
     const nodes = blockchain.getAllNodes();
 
@@ -96,13 +67,14 @@ export function routes(app: any, blockchain: any) {
     }
 
     // Fetch the state of the other nodes.
-    const blockchains = await Promise.all(nodes.map(({url}) => fetch(url, 'blocks')));
+    const blockchains = await Promise.all(Object.values(peers).map(node => node.fetch('/blocks')));
 
     const success = blockchain.consensus(blockchains.map(data => deserialize<Block[]>(Block, data)));
 
     if (success) {
-      res.json(`Node ${nodeId} has reached a consensus on a new state.`);
+      res.json(`Reached a consensus on a new state.`);
     } else {
-      res.json(`Node ${nodeId} hasn't reached a consensus on the existing state.`);
+      res.json(`Hasn't reached a consensus on the existing state.`);
     }
   };
+}
