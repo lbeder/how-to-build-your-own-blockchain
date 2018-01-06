@@ -26,8 +26,8 @@ export class Server {
   use(middleware:any) {
     // lol
   }
-  onRequest(message: any) {
-    let request = new Request(protocol.decode(message)); // also deals with deserializer
+  onRequest(url: string, method: 'get' | 'post' | 'put', body: any) {
+    let request = new Request({url, method, body}); // also deals with deserializer
     try {
       let match = this.handlers[request.method].match(request.url);
       request.params = match.params;

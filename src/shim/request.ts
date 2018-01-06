@@ -1,5 +1,3 @@
-import protocol from './protocol';
-
 export class Request {  
     params: any;
     body: string;
@@ -7,7 +5,7 @@ export class Request {
     url: string;
     reject: (reason?: any) => void;
     resolve: (value?: {} | PromiseLike<{}>) => void;
-    promise: Promise<{}>;
+    promise: Promise<{data: any, status: number}>;
     constructor({url, method, body}: {url: string, method: 'get' | 'put' | 'post', body: string }) {
         this.url = url;
         this.method = method;
