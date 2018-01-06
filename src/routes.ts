@@ -76,5 +76,5 @@ export function routes(app: any, blockchain: any, peers: any) {
     } else {
       res.json(`Hasn't reached a consensus on the existing state.`);
     }
-  };
+  });
 }

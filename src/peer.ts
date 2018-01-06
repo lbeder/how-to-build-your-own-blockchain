@@ -1,5 +1,5 @@
-import { EventEmitter } from "events";
-import { Server } from "src/shim/express";
+import {EventEmitter} from "events";
+import {Server} from "./shim/express";
 
 export interface Resolver {
   resolve: (data: any) => {}
@@ -8,30 +8,33 @@ export interface Resolver {
 
 export class Peer {
   requests: Map<number, Resolver>;
-  peer: { send: (data: any) => {};} & EventEmitter;
+  peer: { send: (data: any) => {}; } & EventEmitter;
   requestId: number;
-  constructor(peer: { send: (data: any) => {};} & EventEmitter) {
+
+  constructor(peer: { send: (data: any) => {}; } & EventEmitter) {
     this.requestId = 0;
     this.peer = peer;
     this.requests = new Map<number, Resolver>();
   }
+
   fetch(url: string, message: any = undefined, method = 'get') {
-      let encodedMessage = JSON.stringify({
-        type: 'request', 
-        requestId: this.requestId, 
-        url,
-        method,
-        payload: message
-      });
-      this.requestId++;
-      this.peer.send(encodedMessage);
-      return new Promise((resolve, reject) => {
-        this.requests.set(this.requestId, { resolve, reject} as Resolver);
-      });
+    let encodedMessage = JSON.stringify({
+      type: 'request',
+      requestId: this.requestId,
+      url,
+      method,
+      payload: message
+    });
+    this.requestId++;
+    this.peer.send(encodedMessage);
+    return new Promise((resolve, reject) => {
+      this.requests.set(this.requestId, {resolve, reject} as Resolver);
+    });
   }
+
   listen(app: Server) {
     this.peer.on('message', async (message: string) => {
-      let {type, payload, requestId, url, method, status, data }= JSON.parse(message);
+      let {type, payload, requestId, url, method, status, data} = JSON.parse(message);
       if (type === 'request') {
         let {data, status} = await app.onRequest(url, method, payload);
         let responseMessage = JSON.stringify({
@@ -42,8 +45,8 @@ export class Peer {
         });
         this.peer.send(responseMessage);
       } else if (type === 'response') {
-        let { resolve }= this.requests.get(requestId);
-        resolve({data, status });
+        let {resolve} = this.requests.get(requestId);
+        resolve({data, status});
       }
     });
   }

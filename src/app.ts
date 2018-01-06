@@ -4,7 +4,6 @@ import express from './shim/express';
 import {routes} from './routes';
 import {SimpleNode} from './simple-node';
 
-
 const nodeId = uuidv4();
 
 const app = express();
@@ -14,5 +13,6 @@ routes(app, blockChain, simpleNode.peers);
 
 (<any>window).blockChain = blockChain;
 (<any>window).simpleNode = simpleNode;
+(<any>window).peers = simpleNode.peers;
 
 
