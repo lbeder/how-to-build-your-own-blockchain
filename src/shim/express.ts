@@ -26,10 +26,6 @@ export class Server {
     this.handlers.put.addRoute(path, fn);
   }
 
-  use(middleware: any) {
-    // lol
-  }
-
   onRequest(url: string, method: 'get' | 'post' | 'put', body: any) {
     let request = new Request({url, method, body}); // also deals with deserializer
     try {

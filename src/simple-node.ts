@@ -7,9 +7,7 @@ export class SimpleNode {
   public peers: { [key: string]: any };
 
   constructor(app: Server) {
-    const webrtc = new SimpleWebRTC({
-      debug: true
-    });
+    const webrtc = new SimpleWebRTC({});
     this.peers = {};
 
     webrtc.createRoom('my-block-chain');
@@ -20,18 +18,21 @@ export class SimpleNode {
       webrtc.on('createdPeer', (rawPeer: any) => {
         const dataChannel = rawPeer.getDataChannel('webcoin');
 
-        const abstractedPeer = {
-          send: function sendWrapper(...args: any[]) {
-            return dataChannel.send(...args);
-          },
-          on: rawPeer.on.bind(rawPeer),
-          off: rawPeer.off.bind(rawPeer)
+        dataChannel.onopen = () => {
+          console.log('Peer connected', rawPeer.id);
+          const abstractedPeer = {
+            send: function sendWrapper(...args: any[]) {
+              return dataChannel.send(...args);
+            },
+            on: rawPeer.on.bind(rawPeer),
+            off: rawPeer.off.bind(rawPeer)
+          };
+
+          const peer = new Peer(abstractedPeer);
+
+          this.peers[rawPeer.id] = peer;
+          peer.listen(app);
         };
-
-        const peer = new Peer(abstractedPeer);
-
-        this.peers[rawPeer.id] = peer;
-        peer.listen(app);
       });
     });
   }

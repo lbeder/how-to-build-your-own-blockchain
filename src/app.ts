@@ -14,5 +14,4 @@ routes(app, blockChain, simpleNode.peers);
 (<any>window).blockChain = blockChain;
 (<any>window).simpleNode = simpleNode;
 (<any>window).peers = simpleNode.peers;
-
-
+(<any>window).app = app;

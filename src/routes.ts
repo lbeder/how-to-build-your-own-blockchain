@@ -58,17 +58,7 @@ export function routes(app: any, blockchain: any, peers: any) {
   });
 
   app.put("/nodes/consensus", async (req: any, res: any) => {
-    const nodes = blockchain.getAllNodes();
-
-    if (nodes.length === 0) {
-      res.json("There are no nodes to sync with!");
-      res.status(404);
-      return;
-    }
-
-    // Fetch the state of the other nodes.
     const blockchains = await Promise.all(Object.values(peers).map(node => node.fetch('/blocks')));
-
     const success = blockchain.consensus(blockchains.map(data => deserialize<Block[]>(Block, data)));
 
     if (success) {
