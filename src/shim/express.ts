@@ -26,8 +26,8 @@ export class Server {
   use(middleware:any) {
     // lol
   }
-  onRequest(peer: any, message: any) {
-    let request = new Request(peer, protocol.decode(message)); // also deals with deserializer
+  onRequest(message: any) {
+    let request = new Request(protocol.decode(message)); // also deals with deserializer
     try {
       let match = this.handlers[request.method].match(request.url);
       request.params = match.params;
