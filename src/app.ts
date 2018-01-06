@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from "axios";
 import { URL } from "url";
 import { Set } from "typescript-collections";
 import { serialize, deserialize } from "serializer.ts/Serializer";
@@ -6,9 +6,9 @@ import * as uuidv4 from "uuid/v4";
 import * as express from "express";
 import * as bodyParser from "body-parser";
 import * as parseArgs from "minimist";
-import Blockchain from './blockchain'
-import Block from './block'
-import Node from './node'
+import Blockchain from "./blockchain";
+import Block from "./block";
+import Node from "./node";
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));

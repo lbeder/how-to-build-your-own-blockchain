@@ -1,5 +1,5 @@
 import { sha256 } from "js-sha256";
-import Transaction from './transaction'
+import Transaction from "./transaction";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 
 export default class Block {

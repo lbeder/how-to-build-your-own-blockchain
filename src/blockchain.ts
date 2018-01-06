@@ -3,10 +3,10 @@ import deepEqual = require("deep-equal");
 import * as fs from "fs";
 import * as path from "path";
 import { serialize, deserialize } from "serializer.ts/Serializer";
-import Block from './block'
-import Transaction from './transaction'
-import Node from './node'
-import Address from './address'
+import Block from "./block";
+import Transaction from "./transaction";
+import Node from "./node";
+import Address from "./address";
 import BigNumber from "bignumber.js";
 
 export default class Blockchain {

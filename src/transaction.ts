@@ -1,4 +1,4 @@
-import Address from './address'
+import Address from "./address";
 
 export default class Transaction {
   public senderAddress: Address;
