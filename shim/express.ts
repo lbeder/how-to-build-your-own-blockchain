@@ -1,6 +1,8 @@
 
 import protocol from './protocol';
 import Router from 'routes';
+import Response from './response';
+import Request from './request';
 
 module.exports = () => {
   // returns app
@@ -25,21 +27,24 @@ module.exports = () => {
     use(middleware:any) {
       // lol
     }
-    onRequest(request) {
+    onRequest(message: any) {
       try {
-      let {method, url, body} = protocol.decode(request.content); // also deals with deserializer
-      let match = this.handlers[method].match(request.url);
-      match.fn({url, body, method, params: match.params}, {
-        json(data) {
-          request.data(data);
-        },
-        status(code) {
-          request.status(code);
-        }
-      });
+        let request = new Request(protocol.decode(message)); // also deals with deserializer
+        let match = this.handlers[method].match(request.url);
+        match.fn({url, body, method, params: match.params}, {
+          json(data) {
+            request.data(data);
+            setTimeout(() => this.end())
+          },
+          status(code) {
+            request.status(code);
+            setTimeout(() => request.end());
+          }
+        });
       } catch (e) {
         request.send(500);
       }
+      return request.promise;
     }
   }
 };

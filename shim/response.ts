@@ -1,7 +1,9 @@
+import Request from './request';
+
 export class Response {
-    peer: any;
-    constructor(peer: any) {
-        this.peer = peer;
+    request: Request;
+    constructor(request: Request) {
+        this.request = request;
     }
     data: any;
     statusCode: number;
@@ -12,6 +14,6 @@ export class Response {
         this.data = data;
     }
     end() {
-
+        this.request.respond(this.data, this.statusCode);
     }
 }
