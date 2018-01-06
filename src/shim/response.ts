@@ -1,21 +1,27 @@
 import { Request } from './request';
 
 export class Response {
-    request: Request;
-    constructor(request: Request) {
-        this.request = request;
+  ended: any;
+  request: Request;
+  constructor(request: Request) {
+    this.request = request;
+    this.ended = false;
+  }
+  data: any;
+  statusCode: number;
+  status(code:number) {
+    this.statusCode = code;
+    setTimeout(() => this.end());
+  }
+  json(data: any) {
+    this.data = data;
+    setTimeout(() => this.end());
+  }
+  end() {
+    if (this.ended) {
+      return;
     }
-    data: any;
-    statusCode: number;
-    status(code:number) {
-        this.statusCode = code;
-        setTimeout(() => this.end());
-    }
-    json(data: any) {
-        this.data = data;
-        setTimeout(() => this.end());
-    }
-    end() {
-        this.request.respond(this.data, this.statusCode);
-    }
+    this.request.respond(this.data, this.statusCode);
+    
+  }
 }
