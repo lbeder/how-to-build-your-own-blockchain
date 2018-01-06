@@ -3,7 +3,7 @@ import protocol from './protocol';
 export class Request {  
     params: any;
     body: string;
-    method: string;
+    method: 'put' | 'get' | 'post';
     url: string;
     reject: (reason?: any) => void;
     resolve: (value?: {} | PromiseLike<{}>) => void;
