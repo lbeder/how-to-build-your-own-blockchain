@@ -1,4 +1,3 @@
-import Request from './request';
 
 export default {
     encode(url, method, status, body) {
