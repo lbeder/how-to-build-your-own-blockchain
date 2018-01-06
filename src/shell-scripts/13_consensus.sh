@@ -164,7 +164,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "recipientAddress": "Alice",
  "value": "12345",
  "action": "move_funds"
-}' "${NODE3_URL}/transactions" -w "\n"
+}' "${NODE1_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e
