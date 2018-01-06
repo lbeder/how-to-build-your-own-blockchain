@@ -1,4 +1,4 @@
-import { Account } from "./address";
+import { Account } from "./accounts";
 
 export class Node {
   public id: string;

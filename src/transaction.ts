@@ -1,4 +1,4 @@
-import { Address } from "./address";
+import { Address } from "./accounts";
 export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;

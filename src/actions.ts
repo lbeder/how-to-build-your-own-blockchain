@@ -5,3 +5,11 @@ export const ACTIONS = {
   TRANSACTION_EXTERNAL_ACCOUNT: "transaction_external_account",
   TRANSACTION_CONTRACT_ACCOUNT: "transaction_contract_account"
 };
+
+export interface actions_interface {
+  CREATE_EXTERNAL_ACCOUNT: string;
+  CREATE_CONTRACT_ACCOUNT: string;
+  NODE_REGISTERED: string;
+  TRANSACTION_EXTERNAL_ACCOUNT: string;
+  TRANSACTION_CONTRACT_ACCOUNT: string;
+}

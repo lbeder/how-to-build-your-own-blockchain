@@ -2,6 +2,7 @@ import * as express from "express";
 import axios from "axios";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import { Blockchain } from "./blockchain";
+import { Node } from "./node";
 import { Block } from "./block";
 
 // Function for parsing contracts stored as JSON
@@ -67,4 +68,65 @@ export const getConsensus = (
     });
 
   res.status(500);
+};
+
+export const getDigitalSignature = (
+  nodes: Array<Node>,
+  nodeId: string,
+  senderAddress: string,
+  action: string
+): any => {
+  console.log(
+    `Creating Digital Signature Params ${nodeId}, ${senderAddress} ${action}`
+  );
+  const requestingNodeIdx = nodes.findIndex(node => node.id === nodeId);
+
+  // Account Idx
+  const requestingNodeAccountIdx = nodes[requestingNodeIdx].accounts.findIndex(
+    accnt => accnt.address === senderAddress
+  );
+
+  // Digital signature
+  return nodes[requestingNodeIdx].accounts[
+    requestingNodeAccountIdx
+  ].createDigitalSignature(action);
+};
+
+export const verifyDigitalSignature = (
+  nodes: Array<Node>,
+  nodeId: string,
+  senderAddress: string,
+  signature: string,
+  action: string
+): boolean => {
+  console.log(
+    `Verifying Digital Signature Params ${nodeId}, ${senderAddress} ${action}`
+  );
+
+  const requestingNodeIdx = nodes.findIndex(node => node.id === nodeId);
+  if (requestingNodeIdx === -1) {
+    throw new Error(
+      `Digital Signature Verification Req Invalid: Node ${nodeId} does not exist!`
+    );
+  }
+
+  // Account Idx
+  const requestingNodeAccountIdx = nodes[requestingNodeIdx].accounts.findIndex(
+    accnt => accnt.address === senderAddress
+  );
+  if (requestingNodeAccountIdx === -1) {
+    throw new Error(
+      `Digital Signature Verification Req Invalid: Account ${senderAddress} does not exist!`
+    );
+  }
+
+  if (
+    !nodes[requestingNodeIdx].accounts[
+      requestingNodeAccountIdx
+    ].verifyDigitalSignature(action, signature)
+  ) {
+    return false;
+  }
+
+  return true;
 };

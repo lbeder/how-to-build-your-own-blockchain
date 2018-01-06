@@ -17,6 +17,7 @@ import { Contract } from "./contract";
 import { Block } from "./block";
 import { Transaction } from "./transaction";
 import { Node } from "./node";
+import { verifyDigitalSignature, getDigitalSignature } from "./utils";
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
@@ -62,32 +63,45 @@ export class Blockchain {
     account_type: string,
     nodeId: string
   ): any {
-    let createdNode = undefined;
-    const node = this.nodes.forEach(node => {
-      if (node.id === nodeId) {
-        account_type === ACTIONS.CREATE_EXTERNAL_ACCOUNT
-          ? node.accounts.push(
-              new ExternalAccount(address, balance, account_type, "randomId")
-            )
-          : node.accounts.push(
-              new ContractAccount(address, balance, account_type, "randomId")
-            );
+    let createdAccount = undefined;
+    const nodeIdx = this.nodes.findIndex(node => node.id === nodeId);
 
-        // Submit Account_Creation Transaction
-        this.submitTransaction(
-          this.nodeId,
-          address,
-          balance,
-          ACTIONS.CREATE_EXTERNAL_ACCOUNT,
-          "NONE",
-          "NONE",
-          0,
-          "NONE"
-        );
-        createdNode = node.accounts[node.accounts.length - 1];
-      }
-    });
-    return createdNode;
+    if (account_type === EXTERNAL_ACCOUNT) {
+      const external_accnt = new ExternalAccount(
+        address,
+        balance,
+        account_type,
+        "randomId"
+      );
+      this.nodes[nodeIdx].accounts.push(external_accnt);
+    } else {
+      const contract_accnt = new ContractAccount(
+        address,
+        balance,
+        account_type,
+        "randomId"
+      );
+      this.nodes[nodeIdx].accounts.push(contract_accnt);
+    }
+
+    // Submit Account_Creation Transaction
+    this.submitTransaction(
+      this.nodeId,
+      address,
+      balance,
+      ACTIONS.CREATE_EXTERNAL_ACCOUNT,
+      "NONE",
+      "NONE",
+      "NONE",
+      0,
+      "NONE",
+      "NONE",
+      false, // can't verify before account is created,
+      "NONE"
+    );
+    return this.nodes[nodeIdx].accounts[
+      this.nodes[nodeIdx].accounts.length - 1
+    ];
   }
 
   // Saves the blockchain to the disk.
@@ -267,18 +281,37 @@ export class Blockchain {
 
   // Submits new transaction to "mempool"
   // TODO: Is transaction valid? Does sender have adequate funds?
-  // TODO: Is this transaction already in the "mempool"?
-  // TODO: Add transaction to state machine
   public submitTransaction(
     senderAddress: Address,
     recipientAddress: Address,
     value: number,
+    action: string,
     methodType: string,
     method: string,
     args: string,
     gas: number,
-    data: string
+    data: string,
+    digitalSignature: string,
+    shouldValidate = true,
+    nodeSender: string
   ) {
+    // Get sender signature
+    if (shouldValidate) {
+      const isTransactionSigValid = verifyDigitalSignature(
+        this.nodes,
+        nodeSender,
+        senderAddress,
+        digitalSignature,
+        action
+      );
+
+      if (!isTransactionSigValid) {
+        throw new Error(
+          "Submit Transaction Request: Transaction signature is invalid!"
+        );
+      }
+    }
+
     // State Transition Validation
     this.transactionPool.push(
       new Transaction(
@@ -372,8 +405,12 @@ export class Blockchain {
       type,
       "None",
       "None",
-      -1,
-      data
+      data,
+      7777,
+      "NONE", // Digital Signature,
+      "NONE",
+      false, // contract have pub private keys?
+      "NONE"
     );
     return parsedContract;
   }

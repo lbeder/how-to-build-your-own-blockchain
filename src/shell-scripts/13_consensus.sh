@@ -138,29 +138,32 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
-# Submit 2 transactions to the first node.
+# Submit 3 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
 curl -X POST -H "Content-Type: application/json" -d '{
- "senderAddress": "DavinciPaintingContract",
+ "senderAddress": "Bob",
+ "nodeId": "B",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "create_contract_account",
+ "action": "move_funds",
  "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
  "senderAddress": "Alice",
+ "nodeId": "A",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "transaction_external_account"
+ "action": "move_funds"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
- "senderAddress": "Alice",
- "recipientAddress": "Eve",
+ "senderAddress": "Eve",
+ "nodeId": "B",
+ "recipientAddress": "Alice",
  "value": "12345",
- "action": "transaction_external_account"
+ "action": "move_funds"
 }' "${NODE3_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.

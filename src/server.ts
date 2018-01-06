@@ -18,7 +18,7 @@ import { Transaction } from "./transaction";
 import { Block } from "./block";
 import { Node } from "./node";
 import { Blockchain } from "./blockchain";
-import { reviver, replacer, getConsensus } from "./utils";
+import { reviver, replacer, getConsensus, getDigitalSignature } from "./utils";
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));
@@ -270,6 +270,7 @@ app.put(
       method,
       args,
       gas,
+      "NONE",
       "NONE"
     );
 
@@ -313,29 +314,40 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
   const {
     senderAddress,
     recipientAddress,
-    type,
+    nodeId,
+    action,
     method,
-    args,
-    gas,
     data
   } = req.body;
   const value = Number(req.body.value);
 
-  if (!senderAddress || !recipientAddress || !value) {
+  if (!senderAddress || !recipientAddress || !value || !action) {
     res.json("Invalid parameters!");
     res.status(500);
     return;
   }
 
+  // TODO: Digital signature should be generated "offline" in client
+  const digitalSignature = getDigitalSignature(
+    blockchain.nodes,
+    nodeId,
+    senderAddress,
+    action
+  );
+
   blockchain.submitTransaction(
     senderAddress,
     recipientAddress,
     value,
-    type,
+    action,
+    "NONE",
     method,
-    args,
-    gas,
-    data
+    "None",
+    457,
+    data,
+    digitalSignature,
+    true,
+    nodeId
   );
 
   res.json(
