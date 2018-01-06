@@ -3,7 +3,7 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-./cleanslate.sh
+./cleanstate.sh
 
 # Start the nodes.
 NODE1="A"
