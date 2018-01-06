@@ -9,9 +9,11 @@ export class Response {
     statusCode: number;
     status(code:number) {
         this.statusCode = code;
+        setTimeout(() => this.end());
     }
     json(data: any) {
         this.data = data;
+        setTimeout(() => this.end());
     }
     end() {
         this.request.respond(this.data, this.statusCode);
