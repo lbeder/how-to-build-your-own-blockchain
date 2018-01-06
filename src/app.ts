@@ -8,6 +8,7 @@ import * as bodyParser from "body-parser";
 import * as parseArgs from "minimist";
 import Blockchain from './blockchain'
 import Block from './block'
+import Node from './node'
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));
