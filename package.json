@@ -10,6 +10,8 @@
   "license": "MIT",
   "homepage": "https://github.com/lbeder/blockchain-academy-how-build-your-own-blockchain#readme",
   "scripts": {
+    "build": "tsc",
+    "start": "node dist/app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
