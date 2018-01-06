@@ -9,7 +9,7 @@ trap "kill 0" EXIT
 NODE_PORT=3000
 NODE_URL="http://localhost:${NODE_PORT}"
 
-node ../dist/11_mining_api.js &
+node ../dist/app.js &
 
 sleep 2
 
