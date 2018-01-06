@@ -8,9 +8,7 @@ export class Request {
     reject: (reason?: any) => void;
     resolve: (value?: {} | PromiseLike<{}>) => void;
     promise: Promise<{}>;
-    peer: any;
-    constructor(peer: any, {url, method, body}: {url: string, method: 'get' | 'put' | 'post', body: string }) {
-        this.peer = peer;
+    constructor({url, method, body}: {url: string, method: 'get' | 'put' | 'post', body: string }) {
         this.url = url;
         this.method = method;
         this.body = body;
