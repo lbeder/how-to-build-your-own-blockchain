@@ -94,6 +94,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Alice\",
  \"balance\": \"43\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
@@ -101,6 +102,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Bob\",
  \"balance\": \"100\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
@@ -108,6 +110,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Ben Affleck\",
  \"balance\": \"4000\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
@@ -115,6 +118,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Selena Gomez\",
  \"balance\": \"232\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
@@ -122,6 +126,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Gal Gadot\",
  \"balance\": \"987\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
@@ -129,6 +134,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Eve\",
  \"balance\": \"337\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
+ \"account_type\": \"external_account\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
