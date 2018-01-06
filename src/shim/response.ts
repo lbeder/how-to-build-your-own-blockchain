@@ -21,6 +21,7 @@ export class Response {
     if (this.ended) {
       return;
     }
+    this.ended = true;
     this.request.respond(this.data, this.statusCode);
     
   }
