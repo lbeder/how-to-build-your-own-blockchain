@@ -1,7 +1,7 @@
 import SimpleWebRTC from 'simplewebrtc';
 import encoder from './shim/protocol';
 import { Server } from './shim/express';
-import { Peer } from 'src/peer';
+import { Peer } from './peer';
 export class SimpleNode {
   public peers: {[key: string]: any};
 
