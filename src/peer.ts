@@ -11,7 +11,7 @@ export class Peer {
   peer: { send: (data: any) => {}; on: any; off: any };
   requestId: number;
 
-  constructor(peer: { send: (data: any) => {}; on: any; off: any }) {
+  constructor(peer: any) {
     this.requestId = 0;
     this.peer = peer;
     this.requests = new Map<number, Resolver>();
