@@ -1,7 +1,9 @@
+import { generateAccountKeys } from "./asymmetric_encryption/generate_rsa_keys";
 export type Address = string;
 export const EXTERNAL_ACCOUNT = "external_account";
 export const CONTRACT_ACCOUNT = "contract_account";
 
+// TODO: accounts need to be hashed and saved so they can be restored later
 export class Account {
   public address: Address;
   public balance: number;
@@ -15,6 +17,12 @@ export class Account {
     this.balance = balance;
     this.type = type;
     this.nonce = 0;
+
+    this.createRSAKeys(address);
+  }
+
+  async createRSAKeys(address: Address) {
+    const keys = await generateAccountKeys(address);
   }
 }
 

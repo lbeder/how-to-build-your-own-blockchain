@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/axios": "^0.14.0",
     "@types/bignumber.js": "^4.0.3",
+    "@types/bluebird": "^3.5.19",
     "@types/body-parser": "^1.16.8",
     "@types/deep-equal": "^1.0.1",
     "@types/express": "^4.0.39",
@@ -24,6 +25,7 @@
     "@types/uuid": "^3.4.3",
     "axios": "^0.17.1",
     "bignumber.js": "^5.0.0",
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "deep-equal": "^1.0.1",
     "express": "^4.16.2",
@@ -32,6 +34,7 @@
     "minimist": "^1.2.0",
     "serializer.ts": "0.0.12",
     "typescript-collections": "^1.2.5",
+    "ursa": "^0.9.4",
     "uuid": "^3.1.0"
   }
 }

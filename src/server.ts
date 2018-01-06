@@ -12,104 +12,13 @@ import { URL } from "url";
 import axios from "axios";
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
-import { Address, CONTRACT_ACCOUNT } from "./address";
+import { Address, CONTRACT_ACCOUNT } from "./accounts";
 import { Contract } from "./contract";
 import { Transaction } from "./transaction";
 import { Block } from "./block";
 import { Node } from "./node";
 import { Blockchain } from "./blockchain";
-
-const reviver = (key: any, value: any) => {
-  if (typeof value === "string" && value.indexOf("function ") === 0) {
-    let functionTemplate = `(${value})`;
-    return eval(functionTemplate);
-  }
-  return value;
-};
-
-const replacer = (key: any, value: any) => {
-  if (typeof value === "function") {
-    return value.toString();
-  }
-  return value;
-};
-
-function objToString(obj: any, ndeep: number): any {
-  if (obj == null) {
-    return String(obj);
-  }
-  switch (typeof obj) {
-    case "string":
-      return '"' + obj + '"';
-    case "function":
-      return obj.name || obj.toString();
-    case "object":
-      var indent = Array(ndeep || 1).join("\t"),
-        isArray = Array.isArray(obj);
-      return (
-        "{["[+isArray] +
-        Object.keys(obj)
-          .map(function(key) {
-            return (
-              "\n\t" +
-              indent +
-              key +
-              ": " +
-              objToString(obj[key], (ndeep || 1) + 1)
-            );
-          })
-          .join(",") +
-        "\n" +
-        indent +
-        "}]"[+isArray]
-      );
-    default:
-      return obj.toString();
-  }
-}
-
-const getConsensus = (req: express.Request, res: express.Response) => {
-  const requests = blockchain.nodes
-    .filter(node => node.id !== nodeId)
-    .map(node => {
-      const req = axios.get(`${node.url}blocks`);
-      return req;
-    });
-
-  if (requests.length === 0) {
-    res.json("There are no nodes to sync with!");
-    res.status(404);
-
-    return;
-  }
-
-  axios
-    .all(requests)
-    .then(
-      axios.spread((...blockchains) => {
-        if (
-          blockchain.consensus(
-            blockchains.map(res => deserialize<Block[]>(Block, res.data))
-          )
-        ) {
-          res.json(`Node ${nodeId} has reached a consensus on a new state.`);
-        } else {
-          res.json(`Node ${nodeId} could not find a better candidate.`);
-        }
-
-        res.status(200);
-        return;
-      })
-    )
-    .catch(err => {
-      console.log(err);
-      res.status(500);
-      res.json(err);
-      return;
-    });
-
-  res.status(500);
-};
+import { reviver, replacer, getConsensus } from "./utils";
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));
@@ -165,13 +74,18 @@ app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
 
 // TODO: Omer
 app.post("/createAccount", (req: express.Request, res: express.Response) => {
-  const { address, balance, type, nodeId } = req.body;
-  const createdNode = blockchain.createAccount(address, balance, type, nodeId);
+  const { address, balance, account_type, nodeId } = req.body;
+  const createdNode = blockchain.createAccount(
+    address,
+    balance,
+    account_type,
+    nodeId
+  );
 
   // Verify creation of Node
   if (!createdNode) {
     res.json(
-      `CreateAccount Failed to create node with address ${address}, balance ${balance}, type ${type} `
+      `CreateAccount Failed to create node with address ${address}, balance ${balance}, type ${account_type} `
     );
     res.status(404);
     return;
@@ -179,7 +93,7 @@ app.post("/createAccount", (req: express.Request, res: express.Response) => {
 
   // Success msg
   res.json(
-    `Creation of account ${address} of type ${type} with balance ${balance}`
+    `Creation of account ${address} of type ${account_type} with balance ${balance}`
   );
 });
 
@@ -187,18 +101,18 @@ app.post("/createAccount", (req: express.Request, res: express.Response) => {
 app.post(
   "/propogateAccountCreation",
   (req: express.Request, res: express.Response) => {
-    const { address, balance, type, nodeId } = req.body;
+    const { address, balance, account_type, nodeId } = req.body;
     const createdNode = blockchain.createAccount(
       address,
       balance,
-      type,
+      account_type,
       nodeId
     );
 
     // Verify creation of node
     if (!createdNode) {
       res.json(
-        `PropogateAccountCreation failed to create node with address ${address}, balance ${balance}, type ${type} `
+        `PropogateAccountCreation failed to create node with address ${address}, balance ${balance}, type ${account_type} `
       );
       res.status(404);
       return;
@@ -212,7 +126,7 @@ app.post(
           address: address,
           balance: balance,
           nodeId: nodeId,
-          type: type
+          account_type: account_type
         })
       );
 
@@ -228,7 +142,7 @@ app.post(
 
     res.status(500);
     res.json(
-      `Propogated creation of account ${address} of type ${type} with balance ${balance}`
+      `Propogated creation of account ${address} of type ${account_type} with balance ${balance}`
     );
   }
 );
@@ -290,69 +204,6 @@ app.post(
     res.json(contract.abi());
   }
 );
-
-// Show all transactions in the transaction pool.
-app.get("/transactions", (req: express.Request, res: express.Response) => {
-  res.json(serialize(blockchain.transactionPool));
-});
-
-app.post("/transactions", (req: express.Request, res: express.Response) => {
-  const {
-    senderAddress,
-    recipientAddress,
-    type,
-    method,
-    args,
-    gas,
-    data
-  } = req.body;
-  const value = Number(req.body.value);
-
-  if (!senderAddress || !recipientAddress || !value) {
-    res.json("Invalid parameters!");
-    res.status(500);
-    return;
-  }
-
-  blockchain.submitTransaction(
-    senderAddress,
-    recipientAddress,
-    value,
-    type,
-    method,
-    args,
-    gas,
-    data
-  );
-
-  res.json(
-    `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`
-  );
-});
-
-app.get("/nodes", (req: express.Request, res: express.Response) => {
-  res.json(serialize(blockchain.nodes));
-});
-
-app.post("/nodes", (req: express.Request, res: express.Response) => {
-  const id = req.body.id;
-  const url = new URL(req.body.url);
-
-  if (!id || !url) {
-    res.json("Invalid parameters!");
-    res.status(500);
-    return;
-  }
-
-  const node = new Node(id, url);
-
-  if (blockchain.register(node)) {
-    res.json(`Registered node: ${node}`);
-  } else {
-    res.json(`Node ${node} already exists!`);
-    res.status(500);
-  }
-});
 
 app.put(
   "/mutateContract/:address",
@@ -453,9 +304,72 @@ app.get(
   }
 );
 
+// Show all transactions in the transaction pool.
+app.get("/transactions", (req: express.Request, res: express.Response) => {
+  res.json(serialize(blockchain.transactionPool));
+});
+
+app.post("/transactions", (req: express.Request, res: express.Response) => {
+  const {
+    senderAddress,
+    recipientAddress,
+    type,
+    method,
+    args,
+    gas,
+    data
+  } = req.body;
+  const value = Number(req.body.value);
+
+  if (!senderAddress || !recipientAddress || !value) {
+    res.json("Invalid parameters!");
+    res.status(500);
+    return;
+  }
+
+  blockchain.submitTransaction(
+    senderAddress,
+    recipientAddress,
+    value,
+    type,
+    method,
+    args,
+    gas,
+    data
+  );
+
+  res.json(
+    `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`
+  );
+});
+
+app.get("/nodes", (req: express.Request, res: express.Response) => {
+  res.json(serialize(blockchain.nodes));
+});
+
+app.post("/nodes", (req: express.Request, res: express.Response) => {
+  const id = req.body.id;
+  const url = new URL(req.body.url);
+
+  if (!id || !url) {
+    res.json("Invalid parameters!");
+    res.status(500);
+    return;
+  }
+
+  const node = new Node(id, url);
+
+  if (blockchain.register(node)) {
+    res.json(`Registered node: ${node}`);
+  } else {
+    res.json(`Node ${node} already exists!`);
+    res.status(500);
+  }
+});
+
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
-  getConsensus(req, res);
+  getConsensus(req, res, blockchain, nodeId);
 });
 
 // Start server

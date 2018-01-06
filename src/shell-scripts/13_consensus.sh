@@ -5,6 +5,13 @@ trap "kill 0" EXIT
 
 ./cleanslate.sh
 
+# Define actions for State machine
+CREATE_EXTERNAL_ACCOUNT="create_external_account"
+CREATE_CONTRACT_ACCOUNT="create_contract_account"
+NODE_REGISTERED="node_registered"
+TRANSACTION_EXTERNAL_ACCOUNT="transaction_external_account"
+TRANSACTION_CONTRACT_ACCOUNT="transaction_contract_account"
+
 # Start the nodes.
 NODE1="A"
 NODE1_PORT=3000
@@ -28,47 +35,56 @@ echo -e && read -n 1 -s -r -p "Registering the node. Press any key to continue..
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE2}\",
- \"url\": \"${NODE2_URL}\"
+ \"url\": \"${NODE2_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE1_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE2}\",
- \"url\": \"${NODE2_URL}\"
+ \"url\": \"${NODE2_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE2_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE2}\",
- \"url\": \"${NODE2_URL}\"
+ \"url\": \"${NODE2_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE3_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE1}\",
- \"url\": \"${NODE1_URL}\"
+ \"url\": \"${NODE1_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE2_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE1}\",
- \"url\": \"${NODE1_URL}\"
+ \"url\": \"${NODE1_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE1_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE1}\",
- \"url\": \"${NODE1_URL}\"
+ \"url\": \"${NODE1_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE3_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE3}\",
- \"url\": \"${NODE3_URL}\"
+ \"url\": \"${NODE3_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE2_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE3}\",
- \"url\": \"${NODE3_URL}\"
+ \"url\": \"${NODE3_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE3_URL}/nodes" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"id\": \"${NODE3}\",
- \"url\": \"${NODE3_URL}\"
+ \"url\": \"${NODE3_URL}\",
+ \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE1_URL}/nodes" -w "\n"
 
 # Register Accounts on Nodes
@@ -77,42 +93,42 @@ echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to c
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Alice\",
  \"balance\": \"43\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Bob\",
  \"balance\": \"100\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Ben Affleck\",
  \"balance\": \"4000\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Selena Gomez\",
  \"balance\": \"232\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Gal Gadot\",
  \"balance\": \"987\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Eve\",
  \"balance\": \"337\",
- \"type\": \"external_account\",
+ \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
@@ -123,7 +139,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "senderAddress": "DavinciPaintingContract",
  "recipientAddress": "Eve",
  "value": "12345",
- "type": "contract_account",
+ "action": "create_contract_account",
  "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
 
@@ -131,14 +147,14 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "senderAddress": "Alice",
  "recipientAddress": "Eve",
  "value": "12345",
- "type": "external_account"
+ "action": "transaction_external_account"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
  "senderAddress": "Alice",
  "recipientAddress": "Eve",
  "value": "12345",
- "type": "external_account"
+ "action": "transaction_external_account"
 }' "${NODE3_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.

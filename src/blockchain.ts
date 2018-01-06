@@ -9,9 +9,10 @@ import {
   Account,
   ExternalAccount,
   ContractAccount,
-  EXTERNAL_ACCOUNT,
-  CONTRACT_ACCOUNT
-} from "./address";
+  CONTRACT_ACCOUNT,
+  EXTERNAL_ACCOUNT
+} from "./accounts";
+import { ACTIONS } from "./actions";
 import { Contract } from "./contract";
 import { Block } from "./block";
 import { Transaction } from "./transaction";
@@ -58,18 +59,18 @@ export class Blockchain {
   public createAccount(
     address: Address,
     balance: number,
-    type: string,
+    account_type: string,
     nodeId: string
   ): any {
     let createdNode = undefined;
     const node = this.nodes.forEach(node => {
       if (node.id === nodeId) {
-        type === EXTERNAL_ACCOUNT
+        account_type === ACTIONS.CREATE_EXTERNAL_ACCOUNT
           ? node.accounts.push(
-              new ExternalAccount(address, balance, type, "randomId")
+              new ExternalAccount(address, balance, account_type, "randomId")
             )
           : node.accounts.push(
-              new ContractAccount(address, balance, type, "randomId")
+              new ContractAccount(address, balance, account_type, "randomId")
             );
 
         // Submit Account_Creation Transaction
@@ -77,7 +78,7 @@ export class Blockchain {
           this.nodeId,
           address,
           balance,
-          "CREATE_ACCOUNT",
+          ACTIONS.CREATE_EXTERNAL_ACCOUNT,
           "NONE",
           "NONE",
           0,
@@ -249,9 +250,25 @@ export class Blockchain {
     return newBlock;
   }
 
+  private stateTransitionValidation(): any {
+    /* TODO:
+      -> Observation - this should be done right before mining!
+       1. Check if the transaction is well-formed 
+       (ie. has the right number of values), the 
+       signature is valid, and the nonce matches the nonce in the sender's 
+       account. If not, return an error.
+
+       2. If the value transfer failed because the sender did not have 
+       enough money, do not add transaction to mempool.
+
+       .3 Add Transaction to mempool
+    */
+  }
+
   // Submits new transaction to "mempool"
   // TODO: Is transaction valid? Does sender have adequate funds?
   // TODO: Is this transaction already in the "mempool"?
+  // TODO: Add transaction to state machine
   public submitTransaction(
     senderAddress: Address,
     recipientAddress: Address,
@@ -262,6 +279,7 @@ export class Blockchain {
     gas: number,
     data: string
   ) {
+    // State Transition Validation
     this.transactionPool.push(
       new Transaction(
         senderAddress,
@@ -276,6 +294,7 @@ export class Blockchain {
     );
   }
 
+  // TODO: Submit Action to State Machine
   public createBlock(): Block {
     /*
     We prepend this transaction, b/c this is most important, 
