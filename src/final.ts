@@ -2,6 +2,9 @@ import { sha256 } from "js-sha256";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import BigNumber from "bignumber.js";
 
+import { BloomFilter } from "bloomfilter";
+import * as _ from 'underscore';
+
 import * as fs from "fs";
 import * as path from "path";
 import deepEqual = require("deep-equal");
@@ -14,6 +17,9 @@ import axios from "axios";
 
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
+
+const DEFAULT_SPV_LEN = 10;
+const BLOOM_FILTER_HASH_FUNCTIONS = 16;
 
 export type Address = string;
 
@@ -248,6 +254,23 @@ export class Blockchain {
     return false;
   }
 
+  public getBlocksForFilter(bloomFilter: BloomFilter, startIndex: number, depth: number): Array<number> {
+    const blocks = [];
+
+    for (let i = startIndex; i < startIndex + depth; i++) {
+      const block = this.blocks[i];
+
+      const possibleTransactions = _.filter(block.transactions, (transaction: Transaction) => {
+          return bloomFilter.test(transaction.senderAddress) || bloomFilter.test(transaction.recipientAddress);
+      });
+      if (possibleTransactions.length > 0) {
+        blocks.push(i);
+      }
+    }
+
+    return blocks;
+  }
+
   // Validates PoW.
   public static isPoWValid(pow: string): boolean {
     try {
@@ -354,6 +377,30 @@ app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
   }
 
   res.json(serialize(blockchain.blocks[id]));
+});
+
+app.post("/blocks/filter/:depth/:start", (req: express.Request, res: express.Response) => {
+  let depth = Number(req.params.depth);
+  let startIndex = Number(req.params.start || blockchain.blocks.length - DEFAULT_SPV_LEN);
+
+  if (isNaN(depth) || isNaN(startIndex)) {
+    res.status(400);
+    res.json("Invalid indexing params");
+    return;
+  }
+
+  startIndex = startIndex < 0 ? 0 : startIndex;
+  if (startIndex + depth > blockchain.blocks.length) {
+    depth = blockchain.blocks.length - startIndex;
+  }
+
+  let filter = req.body.filter;
+  if (!filter || !Array.isArray(filter)) {
+    filter = [];
+  }
+
+  const bloomFilter = new BloomFilter(filter, BLOOM_FILTER_HASH_FUNCTIONS);
+  return res.json(serialize(blockchain.getBlocksForFilter(bloomFilter, startIndex, depth)));
 });
 
 app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
