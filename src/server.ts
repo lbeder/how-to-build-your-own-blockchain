@@ -13,8 +13,13 @@ import axios from "axios";
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
 import { Address, CONTRACT_ACCOUNT } from "./accounts";
+import { ACTIONS } from "./actions";
 import { Contract } from "./contract";
-import { Transaction } from "./transaction";
+import {
+  Transaction,
+  ContractTransaction,
+  AccountTransaction
+} from "./transaction";
 import { Block } from "./block";
 import { Node } from "./node";
 import { Blockchain } from "./blockchain";
@@ -252,32 +257,21 @@ app.put(
     blockchain.nodes[nodeIdx].accounts[contractIdx].nonce++;
 
     // Create Transaction
-    const {
-      senderAddress,
-      recipientAddress,
-      value,
-      methodType,
-      args,
-      gas
-    } = req.body;
+    const { senderAddress, recipientAddress, value } = req.body;
 
     // Add transaction to blockchain
     const transaction = blockchain.submitTransaction(
-      senderAddress,
-      recipientAddress,
-      value,
-      methodType,
-      method,
-      args,
-      gas,
-      "NONE",
-      "NONE"
+      new ContractTransaction(
+        senderAddress,
+        "NONE",
+        recipientAddress,
+        "NONE",
+        100,
+        ACTIONS.MUTATE_CONTRACT_DATA
+      ),
+      false // TODO: how should we validate contract mutation?
     );
 
-    // TODO: mine transaction...
-
-    // Init consensus
-    // getConsensus(req, res);
     res.json(blockchain.nodes[nodeIdx].accounts[contractIdx]);
   }
 );
@@ -312,43 +306,47 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
 
 app.post("/transactions", (req: express.Request, res: express.Response) => {
   const {
+    senderNodeId,
     senderAddress,
     recipientAddress,
-    nodeId,
+    recipientNodeId,
     action,
     method,
     data
   } = req.body;
   const value = Number(req.body.value);
 
-  if (!senderAddress || !recipientAddress || !value || !action) {
+  if (
+    !senderNodeId ||
+    !senderAddress ||
+    !recipientAddress ||
+    !recipientNodeId ||
+    !value ||
+    !action
+  ) {
     res.json("Invalid parameters!");
     res.status(500);
     return;
   }
 
-  // TODO: Digital signature should be generated "offline" in client
   const digitalSignature = getDigitalSignature(
     blockchain.nodes,
-    nodeId,
+    senderNodeId,
     senderAddress,
     action
   );
 
-  blockchain.submitTransaction(
+  const newAccnt = new AccountTransaction(
+    senderNodeId,
     senderAddress,
     recipientAddress,
+    recipientNodeId,
     value,
     action,
-    "NONE",
-    method,
-    "None",
-    457,
-    data,
-    digitalSignature,
-    true,
-    nodeId
+    digitalSignature
   );
+
+  blockchain.submitTransaction(newAccnt, true);
 
   res.json(
     `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`

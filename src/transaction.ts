@@ -1,33 +1,76 @@
 import { Address } from "./accounts";
+import { ACTIONS } from "./actions";
+
 export class Transaction {
+  public senderNodeId: string;
   public senderAddress: Address;
+  public recipientNodeId: string;
   public recipientAddress: Address;
-  public balance: number;
-  public type: string;
-  public method: any;
-  public args: any;
-  public gas: number;
-  public data: string;
+  public value: number;
+  public transactionType: string;
+  public senderDigitalSignature: string;
 
   constructor(
+    senderNodeId: string,
     senderAddress: Address,
     recipientAddress: Address,
-    balance: number,
-    type: string = "None", // Initializing contract, mutating value, transfer of funds etc...
-    method: any = "None",
-    args: any = "None",
-    gas: number = -1,
-    data: string = "None"
+    recipientNodeId: string,
+    value: number,
+    transactionType: string,
+    senderDigitalSignature?: string
   ) {
+    this.senderNodeId = senderNodeId;
     this.senderAddress = senderAddress;
+    this.recipientNodeId = recipientNodeId;
     this.recipientAddress = recipientAddress;
-    this.balance = balance;
-    this.type = type;
-    this.method = method;
-    this.args = args;
-    this.gas = gas;
+    this.value = value;
+    this.transactionType = transactionType;
+    this.senderDigitalSignature = senderDigitalSignature;
+  }
+}
+
+// TODO: add support for callable / sendable methods with args...
+export class ContractTransaction extends Transaction {
+  public data: string;
+  constructor(
+    senderNodeId: string,
+    senderAddress: Address,
+    recipientAddress: Address,
+    recipientNodeId: string,
+    value: number,
+    transactionType: string,
+    data?: string
+  ) {
+    super(
+      senderAddress,
+      senderNodeId,
+      recipientAddress,
+      recipientNodeId,
+      value,
+      ACTIONS.CREATE_CONTRACT_ACCOUNT
+    );
     this.data = data;
   }
 }
 
-// TODO: Transactions should be refactored to contract transaction and account transaction that inherit from base class.
+export class AccountTransaction extends Transaction {
+  constructor(
+    senderNodeId: string,
+    senderAddress: Address,
+    recipientAddress: Address,
+    recipientNodeId: string,
+    value: number,
+    transactionType: string,
+    senderDigitalSignature?: string
+  ) {
+    super(
+      senderNodeId,
+      senderAddress,
+      recipientAddress,
+      recipientNodeId,
+      value,
+      transactionType,
+      senderDigitalSignature
+    );
+  }
+}

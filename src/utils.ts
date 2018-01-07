@@ -76,9 +76,6 @@ export const getDigitalSignature = (
   senderAddress: string,
   action: string
 ): any => {
-  console.log(
-    `Creating Digital Signature Params ${nodeId}, ${senderAddress} ${action}`
-  );
   const requestingNodeIdx = nodes.findIndex(node => node.id === nodeId);
 
   // Account Idx
@@ -99,10 +96,6 @@ export const verifyDigitalSignature = (
   signature: string,
   action: string
 ): boolean => {
-  console.log(
-    `Verifying Digital Signature Params ${nodeId}, ${senderAddress} ${action}`
-  );
-
   const requestingNodeIdx = nodes.findIndex(node => node.id === nodeId);
   if (requestingNodeIdx === -1) {
     throw new Error(

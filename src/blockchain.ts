@@ -15,7 +15,11 @@ import {
 import { ACTIONS } from "./actions";
 import { Contract } from "./contract";
 import { Block } from "./block";
-import { Transaction } from "./transaction";
+import {
+  Transaction,
+  AccountTransaction,
+  ContractTransaction
+} from "./transaction";
 import { Node } from "./node";
 import { verifyDigitalSignature, getDigitalSignature } from "./utils";
 
@@ -50,10 +54,9 @@ export class Blockchain {
   }
 
   // Registers new node.
-  public register(node: Node): boolean {
+  public register(node: Node): Node {
     this.nodes.push(node);
-    // TODO: proper return value
-    return true;
+    return this.nodes[this.nodes.length - 1];
   }
 
   // TODO: Omer
@@ -86,19 +89,17 @@ export class Blockchain {
 
     // Submit Account_Creation Transaction
     this.submitTransaction(
-      this.nodeId,
-      address,
-      balance,
-      ACTIONS.CREATE_EXTERNAL_ACCOUNT,
-      "NONE",
-      "NONE",
-      "NONE",
-      0,
-      "NONE",
-      "NONE",
-      false, // can't verify before account is created,
-      "NONE"
-    );
+      new AccountTransaction(
+        nodeId,
+        address,
+        "NONE",
+        "NONE",
+        balance,
+        ACTIONS.CREATE_EXTERNAL_ACCOUNT,
+        undefined
+      ),
+      false
+    ); // can't verify before account is created,
     return this.nodes[nodeIdx].accounts[
       this.nodes[nodeIdx].accounts.length - 1
     ];
@@ -278,31 +279,16 @@ export class Blockchain {
        .3 Add Transaction to mempool
     */
   }
-
-  // Submits new transaction to "mempool"
-  // TODO: Is transaction valid? Does sender have adequate funds?
-  public submitTransaction(
-    senderAddress: Address,
-    recipientAddress: Address,
-    value: number,
-    action: string,
-    methodType: string,
-    method: string,
-    args: string,
-    gas: number,
-    data: string,
-    digitalSignature: string,
-    shouldValidate = true,
-    nodeSender: string
-  ) {
+  
+  public submitTransaction(transaction: Transaction, shouldValidate: boolean) {
     // Get sender signature
     if (shouldValidate) {
       const isTransactionSigValid = verifyDigitalSignature(
         this.nodes,
-        nodeSender,
-        senderAddress,
-        digitalSignature,
-        action
+        transaction.senderNodeId,
+        transaction.senderAddress,
+        transaction.senderDigitalSignature,
+        transaction.transactionType
       );
 
       if (!isTransactionSigValid) {
@@ -312,19 +298,12 @@ export class Blockchain {
       }
     }
 
+    // Does sender have adequate funds
+
+    // Is nonce sequential
+
     // State Transition Validation
-    this.transactionPool.push(
-      new Transaction(
-        senderAddress,
-        recipientAddress,
-        value,
-        methodType,
-        method,
-        args,
-        gas,
-        data
-      )
-    );
+    this.transactionPool.push(transaction);
   }
 
   // TODO: Submit Action to State Machine
@@ -336,8 +315,11 @@ export class Blockchain {
     const transactions = [
       new Transaction(
         Blockchain.MINING_SENDER,
+        "NONE",
+        "NONE",
         this.nodeId,
-        Blockchain.MINING_REWARD
+        Blockchain.MINING_REWARD,
+        ACTIONS.MINING_REWARD
       ),
       ...this.transactionPool
     ];
@@ -395,22 +377,17 @@ export class Blockchain {
       new ContractAccount(contractName, value, type, data)
     );
 
-    // TODO: check if contract exists -> if so,  throw new Error(`Contract already exists`);
-
-    // Hash contract data and submit to blockchain as transaction
     this.submitTransaction(
-      contractName,
-      "None",
-      value, // this is the contract balance
-      type,
-      "None",
-      "None",
-      data,
-      7777,
-      "NONE", // Digital Signature,
-      "NONE",
-      false, // contract have pub private keys?
-      "NONE"
+      new ContractTransaction(
+        contractName,
+        "NONE",
+        "NONE",
+        "NONE",
+        7777,
+        ACTIONS.CREATE_CONTRACT_ACCOUNT,
+        data
+      ),
+      false
     );
     return parsedContract;
   }

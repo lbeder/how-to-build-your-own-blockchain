@@ -71,13 +71,6 @@ export class ExternalAccount extends Account {
   }
 
   createDigitalSignature(action: string): string {
-    console.log(
-      `Sig Creation: Account ${
-        this.address
-      } is being called. Signature for action ${action} ${ursa.isPrivateKey(
-        this.privateKey
-      )}`
-    );
     return this.privateKey.hashAndSign(
       "sha256",
       Buffer.from(action, "utf8"),
@@ -87,11 +80,6 @@ export class ExternalAccount extends Account {
   }
 
   verifyDigitalSignature(action: string, signature: string) {
-    console.log(
-      `Sig Verification: Account ${
-        this.address
-      } is being called. Signature for action ${action}`
-    );
     return this.publicKey.hashAndVerify(
       "sha256",
       Buffer.from(action, "utf8"),
