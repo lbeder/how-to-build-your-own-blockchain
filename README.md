@@ -6,6 +6,36 @@ You can find the slides of the talk here: [How to Build Your Own Blockchain - Sl
 
 ![How to Build Your Own Blockchain](images/event.png)
 
+## Environment Setup
+
+There is a designated Docker image for this project. It is an Ubuntu image which has Typescript, Node and all other dependencies installed.
+In addition, this project is cloned at /how-build-your-own-blockchain.
+To easily set up a working environment with this project using Docker, simply follow the instructions:
+
+1. Install [Docker](https://docs.docker.com/engine/installation/).
+2. Run the following commands from the terminal:
+
+```
+(sudo) docker pull teambaot/baot:version1
+(sudo) docker run -t -i teambaot/baot:version1 /bin/bash
+cd how-build-your-own-blockchain
+```
+
+If you use Ubunto and wish to run this project locally, run the following commands (Obviously, you may skip installing packages you already have installed):
+
+```
+apt-get update
+apt-get install -y git
+apt-get install -y curl
+curl -sL https://deb.nodesource.com/setup_8.x | bash -
+apt-get install -y nodejs
+git clone https://github.com/blockchain-academy/how-build-your-own-blockchain.git
+cd how-build-your-own-blockchain
+npm i
+tsc
+```
+Then you can run one of the bash scripts (e.g. 13_consensus.sh) to test the blockchain.
+
 ## Blockchain Academy
 
 Blockchain Academy, the community for technologists looking to learn more about crypto and Blockchain technology.
