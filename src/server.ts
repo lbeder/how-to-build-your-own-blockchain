@@ -336,7 +336,23 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     action
   );
 
-  const newAccnt = new AccountTransaction(
+  const nodeIdx = blockchain.nodes.findIndex(node => node.id === senderNodeId);
+  if (nodeIdx === -1) {
+    throw new Error(`/transactions: nodeIdx ${senderNodeId} is invalid...`);
+  }
+
+  const accntIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
+    accnt => accnt.address === senderAddress
+  );
+  if (accntIdx === -1) {
+    throw new Error(
+      `/transactions: senderAddress ${senderAddress} is invalid...`
+    );
+  }
+
+  const newAccntTx = blockchain.nodes[nodeIdx].accounts[
+    accntIdx
+  ].createTransaction(
     senderNodeId,
     senderAddress,
     recipientAddress,
@@ -346,7 +362,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     digitalSignature
   );
 
-  blockchain.submitTransaction(newAccnt, true);
+  blockchain.submitTransaction(newAccntTx, true);
 
   res.json(
     `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`

@@ -9,6 +9,7 @@ export class Transaction {
   public value: number;
   public transactionType: string;
   public senderDigitalSignature: string;
+  public nonce: number;
 
   constructor(
     senderNodeId: string,
@@ -17,6 +18,7 @@ export class Transaction {
     recipientNodeId: string,
     value: number,
     transactionType: string,
+    nonce: number,
     senderDigitalSignature?: string
   ) {
     this.senderNodeId = senderNodeId;
@@ -24,6 +26,7 @@ export class Transaction {
     this.recipientNodeId = recipientNodeId;
     this.recipientAddress = recipientAddress;
     this.value = value;
+    this.nonce = nonce;
     this.transactionType = transactionType;
     this.senderDigitalSignature = senderDigitalSignature;
   }
@@ -39,15 +42,17 @@ export class ContractTransaction extends Transaction {
     recipientNodeId: string,
     value: number,
     transactionType: string,
+    nonce: number,
     data?: string
   ) {
     super(
-      senderAddress,
       senderNodeId,
+      senderAddress,
       recipientAddress,
       recipientNodeId,
       value,
-      ACTIONS.CREATE_CONTRACT_ACCOUNT
+      ACTIONS.CREATE_CONTRACT_ACCOUNT,
+      nonce
     );
     this.data = data;
   }
@@ -61,6 +66,7 @@ export class AccountTransaction extends Transaction {
     recipientNodeId: string,
     value: number,
     transactionType: string,
+    nonce: number,
     senderDigitalSignature?: string
   ) {
     super(
@@ -70,7 +76,10 @@ export class AccountTransaction extends Transaction {
       recipientNodeId,
       value,
       transactionType,
+      nonce,
       senderDigitalSignature
     );
   }
+
+  incrementAccountNonce(senderNodeId: string, senderAddress: Address) {}
 }

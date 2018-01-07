@@ -3,6 +3,7 @@ import axios from "axios";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import { Blockchain } from "./blockchain";
 import { Node } from "./node";
+import { Address } from "./accounts";
 import { Block } from "./block";
 
 // Function for parsing contracts stored as JSON
@@ -122,4 +123,20 @@ export const verifyDigitalSignature = (
   }
 
   return true;
+};
+
+export const verifyNonce = (
+  nodes: Array<Node>,
+  nodeId: string,
+  nodeAddress: Address,
+  txNonce: number
+) => {
+  const nodeIdx = nodes.findIndex(node => node.id === nodeId);
+  const accountIdx = nodes[nodeIdx].accounts.findIndex(
+    accnt => accnt.address === nodeAddress
+  );
+
+  return txNonce === nodes[nodeIdx].accounts[accountIdx].nonce + 1
+    ? true
+    : false;
 };

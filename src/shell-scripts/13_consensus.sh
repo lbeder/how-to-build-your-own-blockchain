@@ -6,11 +6,13 @@ trap "kill 0" EXIT
 ./cleanslate.sh
 
 # Define actions for State machine
-CREATE_EXTERNAL_ACCOUNT="create_external_account"
-CREATE_CONTRACT_ACCOUNT="create_contract_account"
-NODE_REGISTERED="node_registered"
-TRANSACTION_EXTERNAL_ACCOUNT="transaction_external_account"
-TRANSACTION_CONTRACT_ACCOUNT="transaction_contract_account"
+CREATE_EXTERNAL_ACCOUNT="CREATE_EXTERNAL_ACCOUNT"
+CREATE_CONTRACT_ACCOUNT="CREATE_CONTRACT_ACCOUNT"
+CONTRACT_ACCOUNT="CONTRACT_ACCOUNT"
+EXTERNAL_ACCOUNT="EXTERNAL_ACCOUNT"
+NODE_REGISTERED="NODE_REGISTERED"
+TRANSACTION_EXTERNAL_ACCOUNT="TRANSACTION_EXTERNAL_ACCOUNT"
+TRANSACTION_CONTRACT_ACCOUNT="TRANSACTION_CONTRACT_ACCOUNT"
 
 # Start the nodes.
 NODE1="A"
@@ -94,7 +96,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Alice\",
  \"balance\": \"43\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
@@ -102,7 +104,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Bob\",
  \"balance\": \"100\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
@@ -110,7 +112,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Ben Affleck\",
  \"balance\": \"4000\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
@@ -118,7 +120,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Selena Gomez\",
  \"balance\": \"232\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
 }" "${NODE1_URL}/propogateAccountCreation" -w "\n"
 
@@ -126,7 +128,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Gal Gadot\",
  \"balance\": \"987\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
 }" "${NODE3_URL}/propogateAccountCreation" -w "\n"
 
@@ -134,7 +136,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Eve\",
  \"balance\": \"337\",
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
- \"account_type\": \"external_account\",
+ \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
@@ -147,7 +149,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "recipientNodeId": "B",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "transaction_external_account",
+ "action": "TRANSACTION_EXTERNAL_ACCOUNT",
  "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
 
@@ -157,7 +159,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "recipientNodeId": "B",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "transaction_external_account"
+ "action": "TRANSACTION_EXTERNAL_ACCOUNT"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
@@ -166,7 +168,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
  "recipientNodeId": "B",
  "recipientAddress": "Alice",
  "value": "12345",
- "action": "transaction_external_account"
+ "action": "TRANSACTION_EXTERNAL_ACCOUNT"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.

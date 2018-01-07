@@ -4,20 +4,14 @@ import * as path from "path";
 const ursa = require("ursa");
 import { Node } from "./node";
 import { generateAccountKeys } from "./asymmetric_encryption/generate_rsa_keys";
-import { ACTIONS, actions_interface } from "./actions";
+import { AccountTransaction, ContractTransaction } from "./transaction";
+import { ACTIONS } from "./actions";
 
 export type Address = string;
 export type EXTERNAL_ACCOUNT_TYPE = Address;
 export type CONTRACT_ACCOUNT_TYPE = Address;
-export const CONTRACT_ACCOUNT = "contract_account";
-export const EXTERNAL_ACCOUNT = "external_account";
-
-export interface transaction {
-  senderAddress: Address;
-  recipientAddress: Address;
-  value: number;
-  action: actions_interface;
-}
+export const CONTRACT_ACCOUNT = "CONTRACT_ACCOUNT";
+export const EXTERNAL_ACCOUNT = "EXTERNAL_ACCOUNT";
 
 // TODO: accounts need to be hashed and saved so they can be restored later
 export class Account {
@@ -49,6 +43,28 @@ export class ExternalAccount extends Account {
     );
 
     this.createRSAKeys(address);
+  }
+
+  // TODO: Nonce will be incremented when transaction is confirmed  
+  createTransaction(
+    senderNodeId: string,
+    senderAddress: Address,
+    recipientAddress: Address,
+    recipientNodeId: string,
+    value: number,
+    action: string,
+    digitalSignature: string
+  ) {
+    return new AccountTransaction(
+      senderNodeId,
+      senderAddress,
+      recipientAddress,
+      recipientNodeId,
+      value,
+      action,
+      this.nonce + 1,
+      digitalSignature
+    );
   }
 
   async createRSAKeys(address: Address) {

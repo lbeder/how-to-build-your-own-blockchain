@@ -21,7 +21,11 @@ import {
   ContractTransaction
 } from "./transaction";
 import { Node } from "./node";
-import { verifyDigitalSignature, getDigitalSignature } from "./utils";
+import {
+  verifyDigitalSignature,
+  verifyNonce,
+  getDigitalSignature
+} from "./utils";
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
@@ -36,6 +40,7 @@ export class Blockchain {
   public nodeId: string;
   public nodes: Array<Node>;
   public blocks: Array<Block>;
+  public transactionBuffer: Array<Transaction>;
   public transactionPool: Array<Transaction>;
   private storagePath: string;
 
@@ -162,8 +167,6 @@ export class Blockchain {
           throw new Error(`Invalid previous block hash for block #${i}!`);
         }
 
-        // Verify the difficutly of the PoW.
-        // TODO: what if the diffuclty was adjusted? We can store the previous level of difficulty and compare to that. Then update the hash with a new transaction for consensus...?
         if (!this.isPoWValid(current.sha256())) {
           throw new Error(
             `Invalid previous block hash's difficutly for block #${i}!`
@@ -261,46 +264,45 @@ export class Blockchain {
       newBlock.nonce++;
     }
 
-    // TODO: Broadcast solution to all nodes on network
     return newBlock;
   }
 
-  private stateTransitionValidation(): any {
-    /* TODO:
-      -> Observation - this should be done right before mining!
-       1. Check if the transaction is well-formed 
-       (ie. has the right number of values), the 
-       signature is valid, and the nonce matches the nonce in the sender's 
-       account. If not, return an error.
+  private stateTransitionValidation(transaction: Transaction): any {
+    const isTransactionSigValid = verifyDigitalSignature(
+      this.nodes,
+      transaction.senderNodeId,
+      transaction.senderAddress,
+      transaction.senderDigitalSignature,
+      transaction.transactionType
+    );
 
-       2. If the value transfer failed because the sender did not have 
-       enough money, do not add transaction to mempool.
+    if (!isTransactionSigValid) {
+      throw new Error(
+        "Submit Transaction Request: Transaction signature is invalid!"
+      );
+    }
 
-       .3 Add Transaction to mempool
-    */
+    const isNonceValid = verifyNonce(
+      this.nodes,
+      transaction.senderNodeId,
+      transaction.senderAddress,
+      transaction.nonce
+    );
+
+    if (!isNonceValid) {
+      this.transactionBuffer.push(transaction);
+      throw new Error("Submit Transaction Request: Nonce is non - sequantial!");
+    }
+
+    // TODO: Check for adequate funds
   }
-  
+
   public submitTransaction(transaction: Transaction, shouldValidate: boolean) {
     // Get sender signature
     if (shouldValidate) {
-      const isTransactionSigValid = verifyDigitalSignature(
-        this.nodes,
-        transaction.senderNodeId,
-        transaction.senderAddress,
-        transaction.senderDigitalSignature,
-        transaction.transactionType
-      );
-
-      if (!isTransactionSigValid) {
-        throw new Error(
-          "Submit Transaction Request: Transaction signature is invalid!"
-        );
-      }
+      const valid = this.stateTransitionValidation(transaction);
+      if (!valid) return;
     }
-
-    // Does sender have adequate funds
-
-    // Is nonce sequential
 
     // State Transition Validation
     this.transactionPool.push(transaction);
@@ -319,7 +321,8 @@ export class Blockchain {
         "NONE",
         this.nodeId,
         Blockchain.MINING_REWARD,
-        ACTIONS.MINING_REWARD
+        ACTIONS.MINING_REWARD,
+        -1
       ),
       ...this.transactionPool
     ];
