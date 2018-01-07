@@ -142,28 +142,31 @@ curl -X POST -H "Content-Type: application/json" -d "{
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
 curl -X POST -H "Content-Type: application/json" -d '{
+ "senderNodeId": "B",
  "senderAddress": "Bob",
- "nodeId": "B",
+ "recipientNodeId": "B",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "move_funds",
+ "action": "transaction_external_account",
  "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
+ "senderNodeId": "A",
  "senderAddress": "Alice",
- "nodeId": "A",
+ "recipientNodeId": "B",
  "recipientAddress": "Eve",
  "value": "12345",
- "action": "move_funds"
+ "action": "transaction_external_account"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 curl -X POST -H "Content-Type: application/json" -d '{
+ "senderNodeId": "B",
  "senderAddress": "Eve",
- "nodeId": "B",
+ "recipientNodeId": "B",
  "recipientAddress": "Alice",
  "value": "12345",
- "action": "move_funds"
+ "action": "transaction_external_account"
 }' "${NODE1_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.
