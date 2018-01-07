@@ -108,6 +108,10 @@ export class TransactionPool {
   }
 
   private loadFromDisk() {
+    if (!this.storagePath) {
+      this.memPool = [];
+      return;
+    }
     this.memPool = deserialize<Transaction[]>(Transaction, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
   }
 
