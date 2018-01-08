@@ -94,7 +94,7 @@ echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to c
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Alice\",
- \"balance\": \"43\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
@@ -102,7 +102,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Bob\",
- \"balance\": \"100\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
@@ -110,7 +110,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Ben Affleck\",
- \"balance\": \"4000\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
@@ -118,7 +118,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Selena Gomez\",
- \"balance\": \"232\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"A\"
@@ -126,7 +126,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Gal Gadot\",
- \"balance\": \"987\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"C\"
@@ -134,7 +134,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
 
 curl -X POST -H "Content-Type: application/json" -d "{
  \"address\": \"Eve\",
- \"balance\": \"337\",
+ \"balance\": 100,
  \"action\": \"${CREATE_EXTERNAL_ACCOUNT}\",
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
@@ -152,7 +152,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Bob",
     "recipientNodeId": "B",
     "recipientAddress": "Eve",
-    "value": "20",
+    "value": 20,
     "action": "TRANSACTION_EXTERNAL_ACCOUNT",
     "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
     }' "${NODE2_URL}/transactions" -w "\n"
@@ -167,7 +167,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Alice",
     "recipientNodeId": "B",
     "recipientAddress": "Eve",
-    "value": "40",
+    "value": 40,
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
     }' "${NODE1_URL}/transactions" -w "\n"
 fi
@@ -182,7 +182,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Eve",
     "recipientNodeId": "A",
     "recipientAddress": "Alice",
-    "value": "37",
+    "value": 37,
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
     }' "${NODE2_URL}/transactions" -w "\n"
 fi
@@ -196,7 +196,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Eve",
     "recipientNodeId": "A",
     "recipientAddress": "Alice",
-    "value": "5",
+    "value": 5,
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
     }' "${NODE2_URL}/transactions" -w "\n"
 fi
@@ -204,15 +204,15 @@ fi
 # Mine 3 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e
 
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 
 # Reach a consensus on nodes:
 echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue..." && echo -e
 
-curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
+curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
 
 wait
