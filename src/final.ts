@@ -383,16 +383,9 @@ app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.blocks[id]));
 });
 
-app.post("/blocks/filter/:depth/:start", (req: express.Request, res: express.Response) => {
+app.post("/blocks/filter/:depth/:start?", (req: express.Request, res: express.Response) => {
   let depth = Number(req.params.depth);
   let startIndex = Number(req.params.start || blockchain.blocks.length - DEFAULT_SPV_LEN);
-
-  if (isNaN(depth) || isNaN(startIndex)) {
-    res.status(400);
-    res.json("Invalid indexing params");
-    return;
-  }
-
   startIndex = startIndex < 0 ? 0 : startIndex;
   if (startIndex + depth > blockchain.blocks.length) {
     depth = blockchain.blocks.length - startIndex;
@@ -404,7 +397,8 @@ app.post("/blocks/filter/:depth/:start", (req: express.Request, res: express.Res
   }
 
   const bloomFilter = new BloomFilter(filter, BLOOM_FILTER_HASH_FUNCTIONS);
-  return res.json(serialize(blockchain.getBlocksForFilter(bloomFilter, startIndex, depth)));
+
+  return res.json(blockchain.getBlocksForFilter(bloomFilter, startIndex, depth));
 });
 
 app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
