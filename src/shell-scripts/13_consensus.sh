@@ -152,7 +152,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Bob",
     "recipientNodeId": "B",
     "recipientAddress": "Eve",
-    "value": "12345",
+    "value": "20",
     "action": "TRANSACTION_EXTERNAL_ACCOUNT",
     "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
     }' "${NODE1_URL}/transactions" -w "\n"
@@ -167,7 +167,7 @@ if [[ $response = "y" ]]; then
     "senderAddress": "Alice",
     "recipientNodeId": "B",
     "recipientAddress": "Eve",
-    "value": "66",
+    "value": "40",
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
     }' "${NODE1_URL}/transactions" -w "\n"
 fi
@@ -180,9 +180,9 @@ if [[ $response = "y" ]]; then
     curl -X POST -H "Content-Type: application/json" -d '{
     "senderNodeId": "B",
     "senderAddress": "Eve",
-    "recipientNodeId": "B",
+    "recipientNodeId": "A",
     "recipientAddress": "Alice",
-    "value": "401",
+    "value": "37",
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
     }' "${NODE1_URL}/transactions" -w "\n"
 fi
