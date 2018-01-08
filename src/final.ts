@@ -155,12 +155,10 @@ export class UTXOPool {
   }
 
   private setBalance(address: Address, balance: number) {
-    console.log(`Settting balance ${balance} for address ${address}`);
     this.pool[address] = balance;
   }
 
   public transact(sender: Address, recipient: Address, amount: number): boolean {
-    console.log(`transacting from ${sender} to ${recipient} amount ${amount}`);
     let balanceSender = this.getBalance(sender);
     let balanceRecipient = this.getBalance(recipient);
 
