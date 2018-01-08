@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-rm -f ../*.blockchain
+rm -rf ../*.blockchain
 rm -f ../*.transactions

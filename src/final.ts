@@ -3,7 +3,10 @@ import { serialize, deserialize } from "serializer.ts/Serializer";
 import BigNumber from "bignumber.js";
 
 import { BloomFilter } from "bloomfilter";
-import * as _ from 'underscore';
+import * as _ from "underscore";
+
+const level  = require("level");
+const sync = require("promise-synchronizer");
 
 import * as fs from "fs";
 import * as path from "path";
@@ -200,6 +203,7 @@ export class Blockchain {
   public transactionPool: TransactionPool;
   public utxoPool: UTXOPool;
   private storagePath: string;
+  private fileDB: any;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
@@ -207,6 +211,7 @@ export class Blockchain {
     this.transactionPool = new TransactionPool(nodeId, Blockchain.TRANSACTION_DISK_WRITE_INTERVAL_MS);
 
     this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
+    this.fileDB = level(this.storagePath);
 
     // Load the blockchain from the storage.
     this.load();
@@ -221,18 +226,25 @@ export class Blockchain {
 
   // Saves the blockchain to the disk.
   private save() {
-    fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.blocks), undefined, 2), "utf8");
+    const data = JSON.stringify(serialize(this.blocks), undefined, 2);
+    sync(this.fileDB.put("blocks", data));
   }
 
   // Loads the blockchain from the disk.
   private load() {
     try {
-      this.blocks = deserialize<Block[]>(Block, JSON.parse(fs.readFileSync(this.storagePath, "utf8")));
+      const blocks = sync(this.fileDB.get("blocks"));
+      if (!blocks || !blocks.length) {
+        this.blocks = [Blockchain.GENESIS_BLOCK];
+      }
+      else {
+        this.blocks = deserialize<Block[]>(Block, JSON.parse(blocks));
+      }
     } catch (err) {
-      if (err.code !== "ENOENT") {
+      if (err.toString().indexOf("NotFoundError") === -1) {
+        console.log(`Invalid blockchain data file ${this.storagePath} err: ${err}`);
         throw err;
       }
-
       this.blocks = [Blockchain.GENESIS_BLOCK];
     } finally {
       this.verify();
