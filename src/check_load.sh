@@ -72,4 +72,8 @@ sleep 2
 echo -e && read -n 1 -s -r -p "Previous blocks should show up here. Press any key to continue..." && echo -e
 curl "${NODE1_URL}/blocks" -w "\n"
 
+echo -e && read -n 1 -s -r -p "Tap to load all blocks from disk..." && echo -e
+
+curl "$NODE1_URL/blocks/all" -w "\n"
+
 wait

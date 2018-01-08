@@ -7,6 +7,7 @@ import * as _ from "underscore";
 
 const level  = require("level");
 const sync = require("promise-synchronizer");
+const JSONStream = require("JSONStream");
 
 import * as fs from "fs";
 import * as path from "path";
@@ -24,6 +25,7 @@ import * as parseArgs from "minimist";
 const DEFAULT_SPV_LEN = 10;
 const BLOOM_FILTER_HASH_FUNCTIONS = 16;
 const BLOCKS_IN_MEM = 10;
+const BLOCK_KEY_PREFIX = "block_";
 
 export type Address = string;
 
@@ -215,7 +217,7 @@ export class Blockchain {
     this.fileDB = level(this.storagePath);
 
     // Load the blockchain from the storage.
-    this.load();
+    this.load(false);
     // create utxo pool after we have some blocks
     this.utxoPool = new UTXOPool(this.blocks);
   }
@@ -232,39 +234,34 @@ export class Blockchain {
     sync(this.fileDB.put("blockCount", blockCount));
     for (let i = 0; i < this.blocks.length; i++) {
       const data = JSON.stringify(serialize(this.blocks[i]), undefined, 2);
-      sync(this.fileDB.put("block_" + this.blocks[i].blockNumber, data));
+      sync(this.fileDB.put(BLOCK_KEY_PREFIX + this.blocks[i].blockNumber, data));
     }
   }
 
   // Loads the blockchain from the disk.
-  private load() {
+  private load(loadAll: boolean) {
     try {
-      const blockCount = sync(this.fileDB.get("blockCount"));
-      let startBlock = 0;
-      let endBlock = BLOCKS_IN_MEM - 1;
-
-      if (!blockCount || isNaN(blockCount)) {
+      const blockCount = this.getBlockCountOnDisk();
+      if (blockCount == 0) {
         this.blocks = [Blockchain.GENESIS_BLOCK];
         return;
       }
 
-      if (blockCount > BLOCKS_IN_MEM) {
+      let startBlock = 0;
+      let endBlock = BLOCKS_IN_MEM - 1;
+
+      if (loadAll) {
+        endBlock = blockCount - 1;
+      }
+      else if (blockCount > BLOCKS_IN_MEM) {
         startBlock = blockCount - BLOCKS_IN_MEM;
         endBlock = blockCount - 1;
       }
 
       this.blocks = [];
       for (let i = startBlock; i < endBlock; i++) {
-        try {
-          const blockData = sync(this.fileDB.get("block_" + i));
-          const block = deserialize<Block>(Block, JSON.parse(blockData));
-          this.blocks.push(block);
-        }
-        catch (err) {
-          if (!err.notFound) {
-            throw err;
-          }
-        }
+        const block = this.loadBlockFromDisk(i);
+        if (block) this.blocks.push(block);
       }
     } catch (err) {
       if (!err.notFound) {
@@ -274,6 +271,34 @@ export class Blockchain {
       this.blocks = [Blockchain.GENESIS_BLOCK];
     } finally {
       this.verify();
+    }
+  }
+
+  private getBlockCountOnDisk(): number {
+    try {
+      const blockCount = sync(this.fileDB.get("blockCount"));
+      if (!blockCount || isNaN(blockCount)) {
+        return 0;
+      }
+
+      return blockCount;
+    } catch (err) {
+      if (err.notFound) return 0;
+      throw err;
+    }
+  }
+
+  private loadBlockFromDisk(index: number): Block {
+    try {
+      const key = BLOCK_KEY_PREFIX + index;
+      const blockData = sync(this.fileDB.get(key));
+      const block = deserialize<Block>(Block, JSON.parse(blockData));
+
+      return block;
+    }
+    catch (err) {
+      if (err.notFound) return undefined;
+      throw err;
     }
   }
 
@@ -454,6 +479,17 @@ export class Blockchain {
     return this.blocks[this.blocks.length - 1];
   }
 
+  public *getAllBlocks(): IterableIterator<Block> {
+    const blockCount = this.getBlockCountOnDisk();
+    if (!blockCount) {
+      return undefined;
+    }
+
+    for (let i = 0; i < blockCount; i++) {
+      yield this.loadBlockFromDisk(i);
+    }
+  }
+
   public static now(): number {
     return Math.round(new Date().getTime() / 1000);
   }
@@ -475,9 +511,20 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   res.status(500);
 });
 
-// Show all the blocks.
+// Show all the blocks in memory.
 app.get("/blocks", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.blocks));
+});
+
+// Show all the blocks, including those from disk
+app.get("/blocks/all", (req: express.Request, res: express.Response) => {
+  const jsonStream = JSONStream.stringify();
+  jsonStream.pipe(res);
+
+  const generator = blockchain.getAllBlocks();
+  for (let iterator = generator.next(); !iterator.done; iterator = generator.next()) {
+    jsonStream.write(iterator.value);
+  }
 });
 
 // Show specific block.
