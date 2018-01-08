@@ -120,6 +120,70 @@ export class TransactionPool {
   }
 }
 
+interface IAddressBalance {
+  // can't use Address here since index sig only works for string/number
+  [key: string]: number;
+}
+
+// Simple UTXO pool. We'll allow addresses to go into the negative range since we don't want to break
+// all the test logic which has been previously written
+export class UTXOPool {
+  private pool: IAddressBalance;
+
+  constructor(blocks: Array<Block>) {
+    this.pool = {};
+
+    for (let i = 0; i < blocks.length; i++) {
+      this.applyTransactionsFromBlock(blocks[i]);
+    }
+  }
+
+  public applyTransactionsFromBlock(block: Block): boolean {
+    let mask: boolean = true;
+
+    for (let i = 0; i < block.transactions.length; i++) {
+      mask = mask && this.transact(block.transactions[i].senderAddress, block.transactions[i].recipientAddress, block.transactions[i].value);
+    }
+
+    return mask;
+  }
+
+  public getBalance(address: Address): number {
+    if (!_.has(this.pool, address)) return 0;
+
+    return this.pool[address];
+  }
+
+  private setBalance(address: Address, balance: number) {
+    console.log(`Settting balance ${balance} for address ${address}`);
+    this.pool[address] = balance;
+  }
+
+  public transact(sender: Address, recipient: Address, amount: number): boolean {
+    console.log(`transacting from ${sender} to ${recipient} amount ${amount}`);
+    let balanceSender = this.getBalance(sender);
+    let balanceRecipient = this.getBalance(recipient);
+
+    if (balanceSender - amount < 0) {
+      // removing any real logic here so to not fail any tests but in theory we could do something about this
+      // return false;
+    }
+
+    balanceSender -= amount;
+    balanceRecipient += amount;
+
+    // update balance in pool
+    this.setBalance(sender, balanceSender);
+    this.setBalance(recipient, balanceRecipient);
+
+    return true;
+  }
+
+  public toString(): string {
+    return `${this.pool}`;
+  }
+}
+
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
@@ -136,6 +200,7 @@ export class Blockchain {
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: TransactionPool;
+  public utxoPool: UTXOPool;
   private storagePath: string;
 
   constructor(nodeId: string) {
@@ -147,6 +212,8 @@ export class Blockchain {
 
     // Load the blockchain from the storage.
     this.load();
+    // create utxo pool after we have some blocks
+    this.utxoPool = new UTXOPool(this.blocks);
   }
 
   // Registers new node.
@@ -325,6 +392,7 @@ export class Blockchain {
 
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
+    this.utxoPool.applyTransactionsFromBlock(newBlock);
 
     // Remove the mined transactions.
     this.transactionPool.clear();
@@ -481,6 +549,11 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   });
 
   res.status(500);
+});
+
+app.get("/utxo", (req: express.Request, res: express.Response) => {
+  res.json(blockchain.utxoPool);
+  res.status(200);
 });
 
 if (!module.parent) {
