@@ -59,8 +59,15 @@ DEPTH=10
 START=0
 
 # do request with simple bloom filter containing "Alice"
+
+echo "Should show block #1"
 curl -X POST -H "Content-Type: application/json" -d '{
 	"filter": [67108864,256,4194304,16,262144,1,268451840,0,1024,16777216,64,1048576,4,1073807360,0,4096]
 }' "${NODE1_URL}/blocks/filter/${DEPTH}" -w "\n"
+
+echo "Should show no blocks"
+curl -X POST -H "Content-Type: application/json" -d '{
+	"filter": [67108864,256,4194304,16,262144,1,268451840,0,1024,16777216,64,1048576,4,1073807360,0,4096]
+}' "${NODE1_URL}/blocks/filter/${DEPTH}/2" -w "\n"
 
 wait
