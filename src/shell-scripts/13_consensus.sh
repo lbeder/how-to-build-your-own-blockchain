@@ -140,7 +140,7 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
 
-# Submit 3 transactions to the first node.
+# Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
 echo -n "Message for Node B, Address Bob. Authorization request for transferring 12345 coins to Node B, Eve. (y / n)"
@@ -155,7 +155,7 @@ if [[ $response = "y" ]]; then
     "value": "20",
     "action": "TRANSACTION_EXTERNAL_ACCOUNT",
     "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
-    }' "${NODE1_URL}/transactions" -w "\n"
+    }' "${NODE2_URL}/transactions" -w "\n"
 fi
 
 echo -n "Message for Node A, Address Alice. Authorization request for transferring 66 coins to Node B, Eve. (y / n)"
@@ -184,7 +184,21 @@ if [[ $response = "y" ]]; then
     "recipientAddress": "Alice",
     "value": "37",
     "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-    }' "${NODE1_URL}/transactions" -w "\n"
+    }' "${NODE2_URL}/transactions" -w "\n"
+fi
+
+echo -n "Message for Node B, Address Eve. Authorization request for transferring 401 coins to Node B, Alice. (y / n)"
+read -r response
+if [[ $response = "y" ]]; then 
+    echo "Signing transaction with digital signature..."
+    curl -X POST -H "Content-Type: application/json" -d '{
+    "senderNodeId": "B",
+    "senderAddress": "Eve",
+    "recipientNodeId": "A",
+    "recipientAddress": "Alice",
+    "value": "5",
+    "action": "TRANSACTION_EXTERNAL_ACCOUNT"
+    }' "${NODE2_URL}/transactions" -w "\n"
 fi
 
 # Mine 3 blocks on the first node.
