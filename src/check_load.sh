@@ -53,8 +53,11 @@ curl -X POST -H "Content-Type: application/json" -d '{
 # Mine some blocks to commit our transactions
 echo -e && read -n 1 -s -r -p "Mining some blocks. Press any key to continue..." && echo -e
 
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+BLOCK_COUNT=20
+for (( i=1; i<=$BLOCK_COUNT; i++))
+	do
+		curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+	done
 
 echo -e && read -n 1 -s -r -p "Killing the blockchain node..." && echo -e
 
@@ -63,5 +66,10 @@ kill -15 $NODE1_PID
 echo -e && read -n 1 -s -r -p "Reloading..." && echo -e
 
 node ../dist/final.js --port=${NODE1_PORT} --id=${NODE1} &
+
+sleep 2
+
+echo -e && read -n 1 -s -r -p "Previous blocks should show up here. Press any key to continue..." && echo -e
+curl "${NODE1_URL}/blocks" -w "\n"
 
 wait

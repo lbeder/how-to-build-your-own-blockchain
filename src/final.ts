@@ -23,6 +23,7 @@ import * as parseArgs from "minimist";
 
 const DEFAULT_SPV_LEN = 10;
 const BLOOM_FILTER_HASH_FUNCTIONS = 16;
+const BLOCKS_IN_MEM = 10;
 
 export type Address = string;
 
@@ -226,25 +227,50 @@ export class Blockchain {
 
   // Saves the blockchain to the disk.
   private save() {
-    const data = JSON.stringify(serialize(this.blocks), undefined, 2);
-    sync(this.fileDB.put("blocks", data));
+    const blockCount = this.blocks[this.blocks.length - 1].blockNumber;
+
+    sync(this.fileDB.put("blockCount", blockCount));
+    for (let i = 0; i < this.blocks.length; i++) {
+      const data = JSON.stringify(serialize(this.blocks[i]), undefined, 2);
+      sync(this.fileDB.put("block_" + this.blocks[i].blockNumber, data));
+    }
   }
 
   // Loads the blockchain from the disk.
   private load() {
     try {
-      const blocks = sync(this.fileDB.get("blocks"));
-      if (!blocks || !blocks.length) {
+      const blockCount = sync(this.fileDB.get("blockCount"));
+      let startBlock = 0;
+      let endBlock = BLOCKS_IN_MEM - 1;
+
+      if (!blockCount || isNaN(blockCount)) {
         this.blocks = [Blockchain.GENESIS_BLOCK];
+        return;
       }
-      else {
-        this.blocks = deserialize<Block[]>(Block, JSON.parse(blocks));
+
+      if (blockCount > BLOCKS_IN_MEM) {
+        startBlock = blockCount - BLOCKS_IN_MEM;
+        endBlock = blockCount - 1;
+      }
+
+      this.blocks = [];
+      for (let i = startBlock; i < endBlock; i++) {
+        try {
+          const blockData = sync(this.fileDB.get("block_" + i));
+          const block = deserialize<Block>(Block, JSON.parse(blockData));
+          this.blocks.push(block);
+        }
+        catch (err) {
+          if (!err.notFound) {
+            throw err;
+          }
+        }
       }
     } catch (err) {
-      if (err.toString().indexOf("NotFoundError") === -1) {
+      if (!err.notFound) {
         console.log(`Invalid blockchain data file ${this.storagePath} err: ${err}`);
-        throw err;
       }
+
       this.blocks = [Blockchain.GENESIS_BLOCK];
     } finally {
       this.verify();
@@ -252,7 +278,7 @@ export class Blockchain {
   }
 
   // Verifies the blockchain.
-  public static verify(blocks: Array<Block>): boolean {
+  public static verify(blocks: Array<Block>, partial: boolean): boolean {
     try {
       // The blockchain can't be empty. It should always contain at least the genesis block.
       if (blocks.length === 0) {
@@ -260,7 +286,7 @@ export class Blockchain {
       }
 
       // The first block has to be the genesis block.
-      if (!deepEqual(blocks[0], Blockchain.GENESIS_BLOCK)) {
+      if (!partial && !deepEqual(blocks[0], Blockchain.GENESIS_BLOCK)) {
         throw new Error("Invalid first block!");
       }
 
@@ -269,7 +295,7 @@ export class Blockchain {
         const current = blocks[i];
 
         // Verify block number.
-        if (current.blockNumber !== i) {
+        if (!partial && current.blockNumber !== i) {
           throw new Error(`Invalid block number ${current.blockNumber} for block #${i}!`);
         }
 
@@ -297,7 +323,7 @@ export class Blockchain {
   // Verifies the blockchain.
   private verify() {
     // The blockchain can't be empty. It should always contain at least the genesis block.
-    if (!Blockchain.verify(this.blocks)) {
+    if (!Blockchain.verify(this.blocks, true)) {
       throw new Error("Invalid blockchain!");
     }
   }
@@ -318,14 +344,14 @@ export class Blockchain {
       }
 
       // Found a good candidate?
-      if (Blockchain.verify(candidate)) {
+      if (Blockchain.verify(candidate, false)) {
         maxLength = candidate.length;
         bestCandidateIndex = i;
       }
     }
 
     // Compare the candidate and consider to use it.
-    if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))) {
+    if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks, false))) {
       this.blocks = blockchains[bestCandidateIndex];
       this.save();
 
@@ -401,7 +427,7 @@ export class Blockchain {
     const newBlock = this.mineBlock(transactions);
 
     // Append the new block to the blockchain.
-    this.blocks.push(newBlock);
+    this.addBlock(newBlock);
     this.utxoPool.applyTransactionsFromBlock(newBlock);
 
     // Remove the mined transactions.
@@ -411,6 +437,17 @@ export class Blockchain {
     this.save();
 
     return newBlock;
+  }
+
+  private addBlock(block: Block) {
+    this.blocks.push(block);
+
+    if (this.blocks.length > BLOCKS_IN_MEM) {
+      this.save();
+      // trim blocks from memory since they're on disk
+      console.log(`Will discard ${this.blocks.length - BLOCKS_IN_MEM} blocks after disk save`);
+      this.blocks.splice(0, this.blocks.length - BLOCKS_IN_MEM);
+    }
   }
 
   public getLastBlock(): Block {
