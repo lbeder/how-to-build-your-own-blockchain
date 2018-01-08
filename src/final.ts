@@ -251,15 +251,15 @@ export class Blockchain {
       let endBlock = BLOCKS_IN_MEM - 1;
 
       if (loadAll) {
-        endBlock = blockCount - 1;
+        endBlock = blockCount;
       }
       else if (blockCount > BLOCKS_IN_MEM) {
-        startBlock = blockCount - BLOCKS_IN_MEM;
-        endBlock = blockCount - 1;
+        startBlock = blockCount - BLOCKS_IN_MEM + 1;
+        endBlock = blockCount;
       }
 
       this.blocks = [];
-      for (let i = startBlock; i < endBlock; i++) {
+      for (let i = startBlock; i <= endBlock; i++) {
         const block = this.loadBlockFromDisk(i);
         if (block) this.blocks.push(block);
       }
@@ -470,8 +470,7 @@ export class Blockchain {
     if (this.blocks.length > BLOCKS_IN_MEM) {
       this.save();
       // trim blocks from memory since they're on disk
-      console.log(`Will discard ${this.blocks.length - BLOCKS_IN_MEM} blocks after disk save`);
-      this.blocks.splice(0, this.blocks.length - BLOCKS_IN_MEM);
+      const lost = this.blocks.splice(0, this.blocks.length - BLOCKS_IN_MEM);
     }
   }
 
@@ -485,7 +484,7 @@ export class Blockchain {
       return undefined;
     }
 
-    for (let i = 0; i < blockCount; i++) {
+    for (let i = 0; i <= blockCount; i++) {
       yield this.loadBlockFromDisk(i);
     }
   }
@@ -521,10 +520,13 @@ app.get("/blocks/all", (req: express.Request, res: express.Response) => {
   const jsonStream = JSONStream.stringify();
   jsonStream.pipe(res);
 
+  // use a generator to avoid loading everything into memory
   const generator = blockchain.getAllBlocks();
   for (let iterator = generator.next(); !iterator.done; iterator = generator.next()) {
     jsonStream.write(iterator.value);
   }
+
+  jsonStream.end();
 });
 
 // Show specific block.
