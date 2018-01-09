@@ -188,15 +188,15 @@ app.post("/deployContract", (req: express.Request, res: express.Response) => {
 app.post(
   "/propogateContract",
   (req: express.Request, res: express.Response) => {
-    const { contractName, value, type, data } = req.body;
+    const { address, value, type, data } = req.body;
     const contract = eval(data);
-    blockchain.submitContract(contractName, value, type, data);
+    blockchain.submitContract(address, value, type, data);
 
     const requests = blockchain.nodes
       .filter(node => node.id !== nodeId)
       .map(node =>
         axios.post(`${node.url}deployContract`, {
-          contractName: contractName,
+          contractName: address,
           contract: data,
           value: value,
           type: type

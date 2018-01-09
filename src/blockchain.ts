@@ -432,13 +432,24 @@ export class Blockchain {
       new ContractAccount(contractName, value, type, data)
     );
 
+    /* 
+    TODO: 
+    1) Create contract account
+    2) Submit contract account to mempool 
+    */
+    const newContractAccnt = new ContractAccount(
+      contractName,
+      value,
+      type,
+      data
+    );
     this.submitTransaction(
       new ContractTransaction(
         contractName,
         "NONE",
         "NONE",
         "NONE",
-        7777,
+        value,
         ACTIONS.CREATE_CONTRACT_ACCOUNT,
         0, // init nonce
         data
