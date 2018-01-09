@@ -23,7 +23,14 @@ import {
 import { Block } from "./block";
 import { Node } from "./node";
 import { Blockchain } from "./blockchain";
-import { reviver, replacer, getConsensus, getDigitalSignature } from "./utils";
+import {
+  reviver,
+  replacer,
+  getNodeAndAccountIndex,
+  getConsensus,
+  getDigitalSignature,
+  isCrossOriginRequest
+} from "./utils";
 
 // Web server:
 const ARGS = parseArgs(process.argv.slice(2));
@@ -101,6 +108,18 @@ app.post("/createAccount", (req: express.Request, res: express.Response) => {
     `Creation of account ${address} of type ${account_type} with balance ${balance}`
   );
 });
+
+// TODO: Omer
+app.post(
+  "/updateAccountData",
+  (req: express.Request, res: express.Response) => {
+    const { sourceOfTruthNode, nodes } = req.body;
+    blockchain.updateAccounts(nodes);
+    res.json(
+      `Updating accounts in ${nodeId} data with accounts in node ${sourceOfTruthNode}`
+    );
+  }
+);
 
 // TODO: Omer
 app.post(
@@ -314,6 +333,11 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     method,
     data
   } = req.body;
+  if (isCrossOriginRequest(senderNodeId, nodeId)) {
+    throw new Error(
+      `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
+    );
+  }
   const value = Number(req.body.value);
 
   if (
@@ -336,22 +360,15 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     action
   );
 
-  const nodeIdx = blockchain.nodes.findIndex(node => node.id === senderNodeId);
-  if (nodeIdx === -1) {
-    throw new Error(`/transactions: nodeIdx ${senderNodeId} is invalid...`);
-  }
-
-  const accntIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
-    accnt => accnt.address === senderAddress
+  const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
+    blockchain.nodes,
+    senderNodeId,
+    senderAddress,
+    `POST: /transactions: senderAddress ${senderAddress} is invalid...`
   );
-  if (accntIdx === -1) {
-    throw new Error(
-      `/transactions: senderAddress ${senderAddress} is invalid...`
-    );
-  }
 
   const newAccntTx = blockchain.nodes[nodeIdx].accounts[
-    accntIdx
+    accountIdx
   ].createTransaction(
     senderNodeId,
     senderAddress,
@@ -371,6 +388,10 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.nodes));
+});
+
+app.get("/transactionBuffer", (req: express.Request, res: express.Response) => {
+  res.json(serialize(blockchain.transactionBuffer));
 });
 
 app.post("/nodes", (req: express.Request, res: express.Response) => {
@@ -396,6 +417,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   getConsensus(req, res, blockchain, nodeId);
+  res.json(`${nodeId} consensus proogation is complete`);
 });
 
 // Start server

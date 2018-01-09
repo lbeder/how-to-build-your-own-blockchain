@@ -24,7 +24,14 @@ import { Node } from "./node";
 import {
   verifyDigitalSignature,
   verifyNonce,
-  getDigitalSignature
+  getDigitalSignature,
+  getNodesRequestingTransactionWithBalance,
+  validateAdequateFunds,
+  updateAccountsWithFinalizedTransactions,
+  isCrossOriginRequest,
+  getNodeAndAccountIndex,
+  isPendingBlockInChain,
+  applyNewBlockTransactions
 } from "./utils";
 
 export class Blockchain {
@@ -41,6 +48,8 @@ export class Blockchain {
   public nodes: Array<Node>;
   public blocks: Array<Block>;
   public transactionBuffer: Array<Transaction>;
+  public pendingBlock: Block;
+  public minedTxAwaitingConsensus: Array<Transaction>;
   public transactionPool: Array<Transaction>;
   private storagePath: string;
 
@@ -48,6 +57,9 @@ export class Blockchain {
     this.nodeId = nodeId;
     this.nodes = [];
     this.transactionPool = [];
+    this.transactionBuffer = [];
+    this.pendingBlock = undefined;
+    this.minedTxAwaitingConsensus = [];
     this.storagePath = path.resolve(
       __dirname,
       "../",
@@ -62,6 +74,21 @@ export class Blockchain {
   public register(node: Node): Node {
     this.nodes.push(node);
     return this.nodes[this.nodes.length - 1];
+  }
+
+  public updateAccounts(nodes: Array<Node>) {
+    this.nodes.forEach(node => {
+      node.accounts.forEach(account => {
+        const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
+          nodes,
+          node.id,
+          account.address,
+          `blockchain.ts: updateAccounts -> could not find indexes...`
+        );
+        account.balance = nodes[nodeIdx].accounts[accountIdx].balance;
+        account.nonce = nodes[nodeIdx].accounts[accountIdx].nonce;
+      });
+    });
   }
 
   // TODO: Omer
@@ -215,10 +242,25 @@ export class Blockchain {
       bestCandidateIndex !== -1 &&
       (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))
     ) {
+      // applyNewBlockTransactions(this, blockchains[bestCandidateIndex]);
       this.blocks = blockchains[bestCandidateIndex];
+      this.transactionPool = this.transactionBuffer;
+      this.transactionBuffer = []; // TODO: Buffer
+
       this.save();
 
       return true;
+    }
+
+    // Network has reach consensus regarding new block with transactions. Update nodes accordingly.
+    if (isPendingBlockInChain(this.pendingBlock, this.blocks)) {
+      updateAccountsWithFinalizedTransactions(
+        this,
+        this.minedTxAwaitingConsensus
+      );
+    } else {
+      this.transactionPool = this.transactionBuffer;
+      this.transactionBuffer = [];
     }
 
     return false;
@@ -252,12 +294,12 @@ export class Blockchain {
     // Indefinitely until we find valid proof of work
     while (true) {
       const pow = newBlock.sha256();
-      console.log(
-        `Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`
-      );
+      // console.log(
+      //   `Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`
+      // );
 
       if (Blockchain.isPoWValid(pow)) {
-        console.log(`Found valid POW: ${pow}!`);
+        // console.log(`Found valid POW: ${pow}!`);
         break;
       }
 
@@ -288,13 +330,12 @@ export class Blockchain {
       transaction.senderAddress,
       transaction.nonce
     );
-
     if (!isNonceValid) {
       this.transactionBuffer.push(transaction);
-      throw new Error("Submit Transaction Request: Nonce is non - sequantial!");
+      return false;
     }
 
-    // TODO: Check for adequate funds
+    return true;
   }
 
   public submitTransaction(transaction: Transaction, shouldValidate: boolean) {
@@ -310,10 +351,17 @@ export class Blockchain {
 
   // TODO: Submit Action to State Machine
   public createBlock(): Block {
-    /*
-    We prepend this transaction, b/c this is most important, 
-    as miners need to get compensation.
-    */
+    const accountsWithBalances = getNodesRequestingTransactionWithBalance(
+      this.nodes,
+      this.transactionPool
+    );
+
+    // This filters transaction requests that would make the senders balance negative.
+    const validatedTxPool = validateAdequateFunds(
+      accountsWithBalances,
+      this.transactionPool
+    );
+
     const transactions = [
       new Transaction(
         Blockchain.MINING_SENDER,
@@ -324,16 +372,21 @@ export class Blockchain {
         ACTIONS.MINING_REWARD,
         -1
       ),
-      ...this.transactionPool
+      ...validatedTxPool
     ];
 
     // Mine the transactions in a new block.
     const newBlock = this.mineBlock(transactions);
 
+    // These are not finalized as part of the public ledger until there is a consensus
+    this.pendingBlock = newBlock;
+    // These transactions should update new balances only after they are being written to global blockchain
+    this.minedTxAwaitingConsensus.push(...transactions);
+
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
 
-    // Remove the mined transactions.
+    // Empty current tx pool
     this.transactionPool = [];
 
     // Save the blockchain to the storage.
@@ -388,6 +441,7 @@ export class Blockchain {
         "NONE",
         7777,
         ACTIONS.CREATE_CONTRACT_ACCOUNT,
+        0, // init nonce
         data
       ),
       false

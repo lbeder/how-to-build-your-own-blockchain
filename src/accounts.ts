@@ -45,7 +45,7 @@ export class ExternalAccount extends Account {
     this.createRSAKeys(address);
   }
 
-  // TODO: Nonce will be incremented when transaction is confirmed  
+  // TODO: Nonce will be incremented when transaction is confirmed
   createTransaction(
     senderNodeId: string,
     senderAddress: Address,
@@ -62,7 +62,7 @@ export class ExternalAccount extends Account {
       recipientNodeId,
       value,
       action,
-      this.nonce + 1,
+      this.nonce,
       digitalSignature
     );
   }
