@@ -260,7 +260,7 @@ export const validateAdequateFunds = (
 
   return txpool.filter(tx => {
     if (
-      !(tx.transactionType === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT) ||
+      !(tx.transactionType === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT) &&
       !(tx.transactionType === ACTIONS.TRANSACTION_EXTERNAL_ACCOUNT)
     ) {
       return true; // This does not move funds, no validation needed

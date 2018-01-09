@@ -242,7 +242,6 @@ export class Blockchain {
       bestCandidateIndex !== -1 &&
       (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))
     ) {
-      // applyNewBlockTransactions(this, blockchains[bestCandidateIndex]);
       this.blocks = blockchains[bestCandidateIndex];
       this.transactionPool = this.transactionBuffer;
       this.transactionBuffer = []; // TODO: Buffer
