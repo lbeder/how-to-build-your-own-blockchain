@@ -76,7 +76,7 @@ export class GenesisTransaction extends Transaction {
 export class Block {
     public static readonly DIFFICULTY = 4;
     public static readonly TARGET = 2 ** (256 - Block.DIFFICULTY);
-    public static readonly MINING_REWARD = 50;
+    public static readonly MINING_REWARD = 25;
 
     nonce: number;
     hash: string;
@@ -176,19 +176,20 @@ export class Node {
 }
 
 export class Wallet {
-    private key: { exportKey: (arg0: string) => Buffer; sign: (arg0: Buffer) => Buffer; };
+    private privateKey: string;
+    public address: string;
 
     constructor() {
-        this.key = new NodeRSA({ b: 512 });
-    }
-
-    get address() {
-        return this.key.exportKey('public-der').toString('hex');
+        const key = new NodeRSA({ b: 512 });
+        this.address = key.exportKey('public-der').toString('hex');
+        this.privateKey = key.exportKey('private-der').toString('hex');
     }
 
     sign(message: string) {
-        const buff = Buffer.from(message, 'utf8');
-        return this.key.sign(buff);
+        const privateKeyBuff = Buffer.from(this.privateKey, 'hex');
+        const key = new NodeRSA(privateKeyBuff, 'private-der');
+        const messageBuff = Buffer.from(message, 'utf8');
+        return key.sign(messageBuff);
     }
 }
 
@@ -407,22 +408,6 @@ const app = express();
 const nodeId = ARGS.id || uuidv4();
 const blockchain = new Blockchain(nodeId);
 
-const alice = new Wallet();
-const bob = new Wallet();
-
-blockchain.createBlock(alice.address);
-console.log('alice: ', blockchain.computeBalance(alice.address));
-console.log('bob: ', blockchain.computeBalance(bob.address));
-blockchain.submitTransaction(alice, bob.address, 10);
-blockchain.createBlock(alice.address);
-console.log('alice: ', blockchain.computeBalance(alice.address));
-console.log('bob: ', blockchain.computeBalance(bob.address));
-blockchain.submitTransaction(bob, alice.address, 5);
-blockchain.createBlock(alice.address);
-console.log('alice: ', blockchain.computeBalance(alice.address));
-console.log('bob: ', blockchain.computeBalance(bob.address));
-
-
 // Set up bodyParser:
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
@@ -469,7 +454,7 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
 });
 
 app.post("/transactions", (req: express.Request, res: express.Response) => {
-    const senderWallet: Wallet = req.body.senderWallet;
+    const senderWallet = deserialize<Wallet>(Wallet, req.body.senderWallet);
     const recipientAddress = req.body.recipientAddress;
     const value = Number(req.body.value);
 
@@ -536,6 +521,17 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
     });
 
     res.status(500);
+});
+
+app.post("/wallet", (req: express.Request, res: express.Response) => {
+    const wallet = new Wallet();
+    res.json(JSON.stringify(serialize(wallet)));
+});
+
+app.get("/balance/:address", (req: express.Request, res: express.Response) => {
+    const address = req.params.address;
+    const balance = blockchain.computeBalance(address);
+    res.json(balance);
 });
 
 if (!module.parent) {
