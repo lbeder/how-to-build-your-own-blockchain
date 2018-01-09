@@ -412,6 +412,13 @@ export class Blockchain {
     const currentNodeIdx = this.nodes.findIndex(
       node => node.id === this.nodeId
     );
+    if (currentNodeIdx === -1) {
+      throw new Error(
+        `blockchain.ts: getContracts -> could not find ${this.nodeId}`
+      );
+    }
+
+    console.log(`get Contracts ${this.nodeId}`);
     return this.nodes[currentNodeIdx].accounts.filter(
       account => account.type === CONTRACT_ACCOUNT
     );

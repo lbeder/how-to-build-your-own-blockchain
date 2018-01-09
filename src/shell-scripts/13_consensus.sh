@@ -89,6 +89,8 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"action\": \"${NODE_REGISTERED}\"
 }" "${NODE1_URL}/nodes" -w "\n"
 
+sleep 2
+
 # Register Accounts on Nodes
 echo -e && read -n 1 -s -r -p "Registering accounts on nodes. Press any key to continue..." && echo -e
 
@@ -139,6 +141,8 @@ curl -X POST -H "Content-Type: application/json" -d "{
  \"account_type\": \"${EXTERNAL_ACCOUNT}\",
  \"nodeId\": \"B\"
 }" "${NODE2_URL}/propogateAccountCreation" -w "\n"
+
+sleep 2
 
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
