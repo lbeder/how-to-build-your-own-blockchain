@@ -20,7 +20,6 @@ export const getNodeAndAccountIndex = (
   type?: string
 ) => {
   if (type === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT) {
-    console.log(`I enter this edge case here!! ${nodeAddress} ${nodeId}`);
     return getNodeAndContractIndex(nodes, nodeId, nodeAddress, errMsg);
   }
 
@@ -322,21 +321,19 @@ export const updateAccountsWithFinalizedTransactions = (
       "Utils: updateAccountsWithFinalizedTransactions senderIndexes "
     );
 
-    tx.transactionType === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT &&
-      console.log(tx);
-
-    // Update sender account information
-    blockchain.nodes[nodeIdx].accounts[accountIdx].balance -= tx.value;
-
-    // Update account nonce
-    blockchain.nodes[nodeIdx].accounts[accountIdx].nonce++;
-
     /*
     TODO: 
     Contracts execution can emit a transaction, need to implement this
     Update receiver account information
     */
     if (tx.transactionType === ACTIONS.TRANSACTION_EXTERNAL_ACCOUNT) {
+      // Update sender account information
+      blockchain.nodes[nodeIdx].accounts[accountIdx].balance -= tx.value;
+
+      // Update account nonce
+      blockchain.nodes[nodeIdx].accounts[accountIdx].nonce++;
+
+      // Update receiver data
       const receiverIndexes = getNodeAndAccountIndex(
         blockchain.nodes,
         tx.recipientNodeId,
@@ -352,7 +349,7 @@ export const updateAccountsWithFinalizedTransactions = (
         blockchain,
         nodeIdx,
         accountIdx,
-        tx.nonce
+        blockchain.nodes[nodeIdx].accounts[accountIdx].nonce
       );
       parsedContract[tx.method]();
       ContractAccount.updateContractState(

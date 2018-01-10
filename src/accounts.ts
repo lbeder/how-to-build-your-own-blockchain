@@ -141,7 +141,6 @@ export class ContractAccount extends Account {
     nonce: number
   ): any {
     if (nonce === 0) {
-      console.log("I GET TO EVAL BRUH");
       return eval(blockchain.nodes[nodeIdx].accounts[contractIdx].data);
     }
     return JSON.parse(

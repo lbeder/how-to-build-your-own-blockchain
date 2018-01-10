@@ -244,17 +244,6 @@ app.put(
     //   );
     // }
 
-    // safe to use the function, mutate data
-    // parsedContract[method]();
-
-    // Update Contract State
-    // ContractAccount.updateContractState(
-    //   blockchain,
-    //   nodeIdx,
-    //   accountIdx,
-    //   parsedContract
-    // );
-
     // Create Transaction
     const { initiaterNode, initiaterAddress, value } = req.body;
 

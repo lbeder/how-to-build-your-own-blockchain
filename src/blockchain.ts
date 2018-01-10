@@ -98,7 +98,7 @@ export class Blockchain {
             );
           }
 
-          // TODO: stringify contract to maintain state properly
+          account.data = nodes[nodeIdx].accounts[accountIdx].data;
           account.balance = nodes[nodeIdx].accounts[accountIdx].balance;
           account.nonce = nodes[nodeIdx].accounts[accountIdx].nonce;
           return;
