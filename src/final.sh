@@ -4,6 +4,7 @@ trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
 ./cleanslate.sh
+. ./final_funcs.sh
 
 # Start the nodes.
 NODE1="A"
@@ -25,58 +26,13 @@ sleep 2
 # Register the nodes.
 echo -e && read -n 1 -s -r -p "Node2 knows both Node1 and Node3. However, Node1 doesn't know Node3" && echo -e
 
-curl -X POST -H "Content-Type: application/json" -d "{
- \"id\": \"${NODE2}\",
- \"url\": \"${NODE2_URL}\"
-}" "${NODE1_URL}/nodes" -w "\n"
+register_node "${NODE1_URL}" "${NODE2}" "${NODE2_URL}"
 
-curl -X POST -H "Content-Type: application/json" -d "{
- \"id\": \"${NODE1}\",
- \"url\": \"${NODE1_URL}\"
-}" "${NODE2_URL}/nodes" -w "\n"
+register_node "${NODE2_URL}" "${NODE1}" "${NODE1_URL}"
 
-curl -X POST -H "Content-Type: application/json" -d "{
- \"id\": \"${NODE3}\",
- \"url\": \"${NODE3_URL}\"
-}" "${NODE2_URL}/nodes" -w "\n"
+register_node "${NODE2_URL}" "${NODE3}" "${NODE3_URL}"
 
-curl -X POST -H "Content-Type: application/json" -d "{
- \"id\": \"${NODE2}\",
- \"url\": \"${NODE2_URL}\"
-}" "${NODE3_URL}/nodes" -w "\n"
-
-
-function submit_new_transaction_by_client {
-	transaction_id=$(cat /proc/sys/kernel/random/uuid)
-	#TODO: Sign for real
-	signature=$(cat /proc/sys/kernel/random/uuid)
-	curl -s -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
-	{
-	 "senderAddress": "${1}",
-	 "recipientAddress": "${2}",
-	 "value": "${3}",
-	 "commision": "${4}",
-	 "transaction_id": "${transaction_id}",
-	 "signature": "${signature}"
-	}
-EOF
-) "${5}/transactions" -w "\n" > /dev/null
-t=("${1}" "${2}" "${3}" "${4}" "${transaction_id}" "${signature}")
-}
-
-function submit_exiting_transaction_by_client {
-	curl -s -X POST -H "Content-Type: application/json" -d @<(cat <<EOF
-	{
-	 "senderAddress": "${1}",
-	 "recipientAddress": "${2}",
-	 "value": "${3}",
-	 "commision": "${4}",
-	 "transaction_id": "${5}",
-	 "signature": "${6}"
-	}
-EOF
-) "${7}/transactions" -w "\n" > /dev/null
-}
+register_node "${NODE3_URL}" "${NODE2}" "${NODE2_URL}"
 
 # Submitting transactions
 echo -e && read -n 1 -s -r -p "Submit 5 transactions to the first node, 4 to the second node and 3 for the third. Press any key to continue..." && echo -e

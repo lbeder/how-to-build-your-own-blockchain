@@ -36,7 +36,12 @@ export class Transaction {
 
   }
 
+  /*
+    This method should validate that the transaction's signature is indeed signed by
+    the sender's public key. Forgive my lazyness but this is not the main issue here :)
+  */
   public static verify(t: Transaction): boolean {
+    // TODO: validate signature matches the sender's public key
     return true;
   }
   
@@ -94,8 +99,8 @@ export class Blockchain {
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
-  public minTransactionsLoad: number;
-  public maxTransactionsLoad: number;
+  public minTransactionsLoad: number; // The minimal load the network agrees on
+  public maxTransactionsLoad: number; // The maximal load the network agrees on
   private storagePath: string;
 
   constructor(nodeId: string) {
@@ -174,7 +179,7 @@ export class Blockchain {
           throw new Error(`Invalid previous block hash's difficutly for block #${i}!`);
         }
 
-        // Verify that the transactions are well signed
+        // Verify that the transactions in this block are well signed
         for (let j = 0 ; j < current.transactions.length; j++)
         {
          if (!Transaction.verify(current.transactions[j]))
@@ -183,20 +188,20 @@ export class Blockchain {
           }
         }
 
-        // Verify that the number of transactions of blocks we have not synced to yet
-        // is consent to the load.
+        // In case we compare a new blockchain to our known blockchain, verify that
+        // the number of transactions is lower than the max consent load known to us. 
         // Notice that if were loaded from disk or we are not synced to global transaction status
         // previous should be empty, as we are not able to verify the transactions load.
         if (myBlockChain.length > 0)
         {
-          // If this block is new
+          // If this block is new to us
           if (!myBlockChain.find(function (block){return block.sha256() == current.sha256();}))
           {
             const consent_number = this.number_of_transactions_to_be_consented(maxLoad);
             if (current.transactions.length > consent_number)
             {
               throw new Error(`Block #${i} has ${current.transactions.length} transactions, 
-                while the consent number should be max ${consent_number}!`);
+                while the consent number should not exceed ${consent_number}!`);
             }
             maxLoad -= current.transactions.length;
             console.log(`Node ${this.nodeId}: New block contains ${current.transactions.length} transactions, I would have agreed for ${consent_number}`);
@@ -251,25 +256,31 @@ export class Blockchain {
   /**
     This method is a simple demonstration of deciding what would be an acceptable number of
     transactions to be included in the next block. Its real implementation would
-    match the minTransactionsLoad to a range out of a list of ranges, and choose the acceptable
-    number of transactions mapped for the chpsen range.
+    find a suitable range in which load is included out of a list of ranges, and choose the acceptable
+    number of transactions mapped for the chosen range.
   **/
-  public number_of_transactions_to_be_consented(minLoad = this.minTransactionsLoad): number {
-    if (minLoad < 10)
+  public number_of_transactions_to_be_consented(load: number): number {
+    if (load < 10)
     {
-      return Math.min(5, minLoad);
+      return Math.min(5, load);
     }
-    if ((10 <= minLoad) &&  (minLoad < 20))
+    if ((10 <= load) &&  (load < 20))
     {
-      return Math.min(10, minLoad);
+      return Math.min(10, load);
     }
-    return Math.min(20, minLoad);
+    return Math.min(20, load);
   }
 
-    // Receives candidate transactions lists, verifies them, and agree on the number of transactions
-    // to be included in the next block.
+    // Receives candidate transaction id lists, and agree on the transactions load range.
+    // Then, when we mine a block, we use the mininal load so that every other node will agree upon,
+    // but when we validate the number of transactions included in candidate new blocks,
+    // we verify it againt the maximal known load.
+    // Notice that here we learn only of new transactions ids, and unable to verify each transaction.
+    // Its importnat that full transactions sync, which is a more expensive operation compared to
+    // only syncing the IDs, would occure from time to time so that other nodes will not forge
+    // transaction ids in order to falsely increase the network load, so they could get more
+    // money from commisions.
   public transactions_consensus(transaction_ids_list: Array<Array<string>>): [number, number]  {
-    // Iterate over the proposed candidates and find the longest, valid, candidate.
     let minLength : number = this.transactionPool.length;
     let maxLength : number = this.transactionPool.length;
 
@@ -362,6 +373,8 @@ export class Blockchain {
     console.log(`Node ${this.nodeId}: Now pending ${this.transactionPool.length} transactions.`)
   }
 
+  // Same way as it is in bitcoin, the miner chooses the transactions with the largest 
+  // commisions, so it is still an interest for the transaction sender to send a generous commision.
   public choose_lucrative_transactions(n: number): Array<Transaction> {
     if (n <= 0)
     {
@@ -377,7 +390,7 @@ export class Blockchain {
   // Creates new block on the blockchain.
   public createBlock(): Block {
     // Get the number of transactions to be included in this block
-    const number_of_transactions_to_consent = this.number_of_transactions_to_be_consented();
+    const number_of_transactions_to_consent = this.number_of_transactions_to_be_consented(this.minTransactionsLoad);
     // Reduce 1 in order to include our prize transaction
     const number_of_transactions_to_take_from_pool = number_of_transactions_to_consent - 1;
     const number_of_pending_transactions = this.transactionPool.length - number_of_transactions_to_take_from_pool;
