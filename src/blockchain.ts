@@ -13,7 +13,6 @@ import {
   EXTERNAL_ACCOUNT
 } from "./accounts";
 import { ACTIONS } from "./actions";
-import { Contract } from "./contract";
 import { Block } from "./block";
 import {
   Transaction,
@@ -33,7 +32,6 @@ import {
   isPendingBlockInChain,
   applyNewBlockTransactions
 } from "./utils";
-
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
@@ -79,6 +77,12 @@ export class Blockchain {
   public updateAccounts(nodes: Array<Node>) {
     this.nodes.forEach(node => {
       node.accounts.forEach(account => {
+        // Contracts are updated in real time when data mutates to support consistency
+        if (account.type === CONTRACT_ACCOUNT) {
+          console.log(`account was contract and ${account.address}`);
+          return;
+        }
+
         const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
           nodes,
           node.id,
@@ -337,7 +341,7 @@ export class Blockchain {
     return true;
   }
 
-  public submitTransaction(transaction: Transaction, shouldValidate: boolean) {
+  public submitTransaction(transaction: Transaction, shouldValidate = true) {
     // Get sender signature
     if (shouldValidate) {
       const valid = this.stateTransitionValidation(transaction);

@@ -2,6 +2,7 @@ import * as fs from "fs";
 import axios from "axios";
 import * as path from "path";
 const ursa = require("ursa");
+import { Blockchain } from "./blockchain";
 import { Node } from "./node";
 import { generateAccountKeys } from "./asymmetric_encryption/generate_rsa_keys";
 import { AccountTransaction, ContractTransaction } from "./transaction";
@@ -114,5 +115,55 @@ export class ContractAccount extends Account {
   constructor(address: Address, balance: number, type: string, data: any) {
     super(address, balance, type);
     this.data = data;
+  }
+
+  // Stringifying contract to JSON
+  static replacer(key: any, value: any) {
+    if (typeof value === "function") {
+      return value.toString();
+    }
+    return value;
+  }
+
+  // Parse stringified contract
+  static reviver(key: any, value: any) {
+    if (typeof value === "string" && value.indexOf("function ") === 0) {
+      let functionTemplate = `(${value})`;
+      return eval(functionTemplate);
+    }
+    return value;
+  }
+
+  static parseContractData(
+    blockchain: Blockchain,
+    nodeIdx: number,
+    contractIdx: number
+  ): any {
+    let parsedContract: any;
+    if (blockchain.nodes[nodeIdx].accounts[contractIdx].nonce === 0) {
+      parsedContract = eval(
+        blockchain.nodes[nodeIdx].accounts[contractIdx].data
+      );
+    } else {
+      parsedContract = JSON.parse(
+        blockchain.nodes[nodeIdx].accounts[contractIdx].data,
+        this.reviver
+      );
+    }
+    return parsedContract;
+  }
+
+  static updateContractState(
+    blockchain: Blockchain,
+    nodeIdx: number,
+    contractIdx: number,
+    parsedContract: any
+  ): any {
+    // Update Contract State
+    blockchain.nodes[nodeIdx].accounts[contractIdx].data = JSON.stringify(
+      parsedContract,
+      this.replacer
+    );
+    blockchain.nodes[nodeIdx].accounts[contractIdx].nonce++;
   }
 }

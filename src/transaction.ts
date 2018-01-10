@@ -51,7 +51,7 @@ export class ContractTransaction extends Transaction {
       recipientAddress,
       recipientNodeId,
       value,
-      ACTIONS.CREATE_CONTRACT_ACCOUNT,
+      transactionType,
       nonce
     );
     this.data = data;

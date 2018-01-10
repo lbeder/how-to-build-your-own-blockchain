@@ -12,9 +12,8 @@ import { URL } from "url";
 import axios from "axios";
 import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
-import { Address, CONTRACT_ACCOUNT } from "./accounts";
+import { Address, ContractAccount, CONTRACT_ACCOUNT } from "./accounts";
 import { ACTIONS } from "./actions";
-import { Contract } from "./contract";
 import {
   Transaction,
   ContractTransaction,
@@ -24,9 +23,8 @@ import { Block } from "./block";
 import { Node } from "./node";
 import { Blockchain } from "./blockchain";
 import {
-  reviver,
-  replacer,
   getNodeAndAccountIndex,
+  getNodeAndContractIndex,
   getConsensus,
   getDigitalSignature,
   isCrossOriginRequest
@@ -234,87 +232,50 @@ app.put(
   (req: express.Request, res: express.Response) => {
     const { address } = req.params;
     const { method } = req.body;
-    let parsedContract;
-    const nodeIdx = blockchain.nodes.findIndex(node => node.id === nodeId);
-    if (nodeIdx === -1) {
-      res.json(`Invalid ${nodeId}...`);
-      res.status(404);
-      return;
-    }
-
-    // Find contract by address
-    const contractIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
-      account =>
-        (account.address = address && account.type === CONTRACT_ACCOUNT)
+    const { nodeIdx, accountIdx } = getNodeAndContractIndex(
+      blockchain.nodes,
+      nodeId,
+      address,
+      "Could not find contract node or address"
     );
-    if (contractIdx === -1) {
-      res.json(`Invalid ${contractIdx}...`);
-      res.status(404);
-      return;
-    }
 
     // Parse Contract Data (Code)
-    if (blockchain.nodes[nodeIdx].accounts[contractIdx].nonce === 0) {
-      parsedContract = eval(
-        blockchain.nodes[nodeIdx].accounts[contractIdx].data
-      );
-    } else {
-      parsedContract = JSON.parse(
-        blockchain.nodes[nodeIdx].accounts[contractIdx].data,
-        reviver
-      );
-    }
+    const parsedContract = ContractAccount.parseContractData(
+      blockchain,
+      nodeIdx,
+      accountIdx
+    );
 
     // Mutate Data
     parsedContract[method]();
 
     // Update Contract State
-    blockchain.nodes[nodeIdx].accounts[contractIdx].data = JSON.stringify(
-      parsedContract,
-      replacer
+    ContractAccount.updateContractState(
+      blockchain,
+      nodeIdx,
+      accountIdx,
+      parsedContract
     );
-    blockchain.nodes[nodeIdx].accounts[contractIdx].nonce++;
 
     // Create Transaction
-    const { senderAddress, recipientAddress, value } = req.body;
+    const { recipientAddress, value } = req.body;
 
+    // TODO: address should specify who inited the mutation
     // Add transaction to blockchain
     const transaction = blockchain.submitTransaction(
       new ContractTransaction(
-        senderAddress,
         "NONE",
-        recipientAddress,
+        address,
+        "NONE",
         "NONE",
         100,
-        ACTIONS.MUTATE_CONTRACT_DATA
+        ACTIONS.MUTATE_CONTRACT_DATA,
+        blockchain.nodes[nodeIdx].accounts[accountIdx].nonce
       ),
-      false // TODO: how should we validate contract mutation?
+      false
     );
 
-    res.json(blockchain.nodes[nodeIdx].accounts[contractIdx]);
-  }
-);
-
-app.get(
-  "/contract/:contractId/abi",
-  (req: express.Request, res: express.Response) => {
-    const contractId = req.params.contractId;
-    const nodeIdx = blockchain.nodes.findIndex(node => node.id === nodeId);
-    const contractIdx = blockchain.nodes[nodeIdx].accounts.findIndex(
-      account => (account.id = contractId)
-    );
-    if (contractIdx === -1) {
-      res.json(`Oops...Contract ${contractId} does not exist`);
-      res.status(404);
-    }
-    res.json(
-      JSON.stringify(
-        this.nodes[nodeIdx].accounts[contractIdx].data.abi(),
-        replacer,
-        4
-      )
-    );
-    //  blockchain.contracts.find
+    res.json(blockchain.nodes[nodeIdx].accounts[accountIdx]);
   }
 );
 

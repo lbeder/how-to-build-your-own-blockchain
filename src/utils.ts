@@ -4,7 +4,7 @@ import { serialize, deserialize } from "serializer.ts/Serializer";
 import { Blockchain } from "./blockchain";
 import { Node } from "./node";
 import { Transaction } from "./transaction";
-import { Address } from "./accounts";
+import { Address, CONTRACT_ACCOUNT } from "./accounts";
 import { ACTIONS } from "./actions";
 import { Block } from "./block";
 
@@ -12,8 +12,14 @@ export const getNodeAndAccountIndex = (
   nodes: Array<Node>,
   nodeId: string,
   nodeAddress: Address,
-  errMsg: string
+  errMsg: string,
+  type?: string
 ) => {
+  if (type === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT) {
+    console.log(`I enter this edge case here!!`);
+    return getNodeAndContractIndex(nodes, nodeId, nodeAddress, errMsg);
+  }
+
   const nodeIdx = nodes.findIndex(node => node.id === nodeId);
   if (nodeIdx === -1) {
     throw new Error(`${errMsg} -> could not find nodeIdx of ${nodeId}`);
@@ -34,36 +40,45 @@ export const getNodeAndAccountIndex = (
   };
 };
 
-// Function for parsing contracts stored as JSON
-export const reviver = (key: any, value: any) => {
-  if (typeof value === "string" && value.indexOf("function ") === 0) {
-    let functionTemplate = `(${value})`;
-    return eval(functionTemplate);
-  }
-  return value;
-};
-
-// Function for stringifying contract to JSON
-export const replacer = (key: any, value: any) => {
-  if (typeof value === "function") {
-    return value.toString();
-  }
-  return value;
-};
-
-export const postAccountUpdates = async (
-  blockchain: Blockchain,
-  nodeId: string
+export const getNodeAndContractIndex = (
+  nodes: Array<Node>,
+  nodeId: string,
+  contractAddress: Address,
+  errMsg: string
 ) => {
+  const nodeIdx = nodes.findIndex(node => node.id === nodeId);
+  if (nodeIdx === -1) {
+    throw new Error(
+      `utils.ts: getNodeAndContractIndex: ${errMsg} -> could not find accountIdx of ${nodeId}`
+    );
+  }
+
+  // Find contract by address
+  const accountIdx = nodes[nodeIdx].accounts.findIndex(
+    account =>
+      account.address === contractAddress && account.type === CONTRACT_ACCOUNT
+  );
+  if (accountIdx === -1) {
+    throw new Error(
+      `utils.ts: getNodeAndContractIndex: ${errMsg} -> could not find contractIndex of ${contractAddress}`
+    );
+  }
+
+  return {
+    nodeIdx,
+    accountIdx
+  };
+};
+
+export const postAccountUpdates = (blockchain: Blockchain, nodeId: string) => {
   const requests = blockchain.nodes
     .filter(node => node.id !== nodeId)
-    .map(node => {
-      const req = axios.post(`${node.url}updateAccountData`, {
+    .map(node =>
+      axios.post(`${node.url}updateAccountData`, {
         sourceOfTruthNode: nodeId,
         nodes: blockchain.nodes
-      });
-      return req;
-    });
+      })
+    );
 
   if (requests.length === 0) {
     return {
@@ -85,7 +100,7 @@ export const postAccountUpdates = async (
 
   return {
     success: true,
-    msg: "Utils: Post accounts updates, successfully updated all nodes"
+    msg: "Utils.ts: Post accounts updates, successfully updated all nodes"
   };
 };
 
@@ -98,10 +113,7 @@ export const getConsensus = (
   let propogateRes;
   const requests = blockchain.nodes
     .filter(node => node.id !== nodeId)
-    .map(node => {
-      const req = axios.get(`${node.url}blocks`);
-      return req;
-    });
+    .map(node => axios.get(`${node.url}blocks`));
 
   if (requests.length === 0) {
     res.status(404);
@@ -124,14 +136,7 @@ export const getConsensus = (
         } else {
           console.log(`Node ${nodeId} has the longest chain.`);
           // Propogate new account data to network
-          propogateRes = postAccountUpdates(blockchain, nodeId)
-            .then(res => res)
-            .catch(err => {
-              console.log(err);
-              res.status(500);
-              res.json(err);
-              return;
-            });
+          propogateRes = postAccountUpdates(blockchain, nodeId);
         }
       })
     )
@@ -225,12 +230,13 @@ export const getNodesRequestingTransactionWithBalance = (
   });
 
   filteredPool.forEach(tx => {
-    const { senderNodeId, senderAddress } = tx;
+    const { senderNodeId, senderAddress, transactionType } = tx;
     const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
       nodes,
       senderNodeId,
       senderAddress,
-      "Utils: getNodesRequestingTransactionWithBalance "
+      "Utils: getNodesRequestingTransactionWithBalance ",
+      transactionType
     );
     accountBalances[senderAddress] =
       nodes[nodeIdx].accounts[accountIdx].balance;
