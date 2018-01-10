@@ -32,6 +32,7 @@ import {
   isPendingBlockInChain,
   applyNewBlockTransactions
 } from "./utils";
+import { currentId } from "async_hooks";
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
@@ -74,21 +75,43 @@ export class Blockchain {
     return this.nodes[this.nodes.length - 1];
   }
 
-  public updateAccounts(nodes: Array<Node>) {
+  public updateAccounts(nodes: Array<Node>, currentNodeId: string) {
     this.nodes.forEach(node => {
       node.accounts.forEach(account => {
-        // Contracts are updated in real time when data mutates to support consistency
+        // Update Contract Account
         if (account.type === CONTRACT_ACCOUNT) {
-          console.log(`account was contract and ${account.address}`);
+          const nodeIdx = nodes.findIndex(node => node.id === currentNodeId);
+          if (nodeIdx === -1) {
+            throw new Error(
+              `blockchain.ts: updateAccounts: could not find contract account nodeId ${currentNodeId} `
+            );
+          }
+
+          const accountIdx = nodes[nodeIdx].accounts.findIndex(
+            accnt => accnt.address === account.address
+          );
+          if (accountIdx === -1) {
+            throw new Error(
+              `blockchain.ts: updateAccounts: could not find contract account ${currentNodeId} ${
+                account.address
+              } `
+            );
+          }
+
+          // TODO: stringify contract to maintain state properly
+          account.balance = nodes[nodeIdx].accounts[accountIdx].balance;
+          account.nonce = nodes[nodeIdx].accounts[accountIdx].nonce;
           return;
         }
 
+        // Update External Account
         const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
           nodes,
           node.id,
           account.address,
           `blockchain.ts: updateAccounts -> could not find indexes...`
         );
+
         account.balance = nodes[nodeIdx].accounts[accountIdx].balance;
         account.nonce = nodes[nodeIdx].accounts[accountIdx].nonce;
       });
@@ -352,7 +375,6 @@ export class Blockchain {
     this.transactionPool.push(transaction);
   }
 
-  // TODO: Submit Action to State Machine
   public createBlock(): Block {
     const accountsWithBalances = getNodesRequestingTransactionWithBalance(
       this.nodes,
@@ -443,30 +465,21 @@ export class Blockchain {
       new ContractAccount(contractName, value, type, data)
     );
 
-    /* 
-    TODO: 
-    1) Create contract account
-    2) Submit contract account to mempool 
-    */
-    const newContractAccnt = new ContractAccount(
-      contractName,
-      value,
-      type,
-      data
-    );
     this.submitTransaction(
       new ContractTransaction(
+        this.nodeId,
         contractName,
-        "NONE",
         "NONE",
         "NONE",
         value,
         ACTIONS.CREATE_CONTRACT_ACCOUNT,
-        0, // init nonce
+        0,
+        "init node",
+        "init add",
         data
       ),
       false
-    );
+    ); // init nonce
     return parsedContract;
   }
 }

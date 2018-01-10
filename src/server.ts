@@ -112,7 +112,7 @@ app.post(
   "/updateAccountData",
   (req: express.Request, res: express.Response) => {
     const { sourceOfTruthNode, nodes } = req.body;
-    blockchain.updateAccounts(nodes);
+    blockchain.updateAccounts(nodes, sourceOfTruthNode);
     res.json(
       `Updating accounts in ${nodeId} data with accounts in node ${sourceOfTruthNode}`
     );
@@ -178,7 +178,7 @@ app.get("/contracts", (req: express.Request, res: express.Response) => {
 // TODO: Omer
 app.post("/deployContract", (req: express.Request, res: express.Response) => {
   const { contractName, contract, value, type } = req.body;
-  blockchain.submitContract(contractName, value, type, eval(contract));
+  blockchain.submitContract(contractName, value, type, contract);
   res.json(JSON.stringify(`${nodeId} deployed contracts!`));
 });
 
@@ -187,7 +187,6 @@ app.post(
   "/propogateContract",
   (req: express.Request, res: express.Response) => {
     const { address, value, type, data } = req.body;
-    const contract = eval(data);
     blockchain.submitContract(address, value, type, data);
 
     const requests = blockchain.nodes
@@ -223,7 +222,7 @@ app.post(
 
     res.status(500);
 
-    res.json(contract.abi());
+    res.json(data);
   }
 );
 
@@ -239,38 +238,40 @@ app.put(
       "Could not find contract node or address"
     );
 
-    // Parse Contract Data (Code)
-    const parsedContract = ContractAccount.parseContractData(
-      blockchain,
-      nodeIdx,
-      accountIdx
-    );
+    // if (typeof parsedContract[method] !== "function") {
+    //   throw new Error(
+    //     `server.ts: mutateContract -> method ${method} does not exist on contract...`
+    //   );
+    // }
 
-    // Mutate Data
-    parsedContract[method]();
+    // safe to use the function, mutate data
+    // parsedContract[method]();
 
     // Update Contract State
-    ContractAccount.updateContractState(
-      blockchain,
-      nodeIdx,
-      accountIdx,
-      parsedContract
-    );
+    // ContractAccount.updateContractState(
+    //   blockchain,
+    //   nodeIdx,
+    //   accountIdx,
+    //   parsedContract
+    // );
 
     // Create Transaction
-    const { recipientAddress, value } = req.body;
+    const { initiaterNode, initiaterAddress, value } = req.body;
 
     // TODO: address should specify who inited the mutation
     // Add transaction to blockchain
     const transaction = blockchain.submitTransaction(
       new ContractTransaction(
-        "NONE",
+        nodeId,
         address,
         "NONE",
         "NONE",
         100,
-        ACTIONS.MUTATE_CONTRACT_DATA,
-        blockchain.nodes[nodeIdx].accounts[accountIdx].nonce
+        ACTIONS.TRANSACTION_CONTRACT_ACCOUNT,
+        blockchain.nodes[nodeIdx].accounts[accountIdx].nonce,
+        initiaterNode,
+        initiaterAddress,
+        method
       ),
       false
     );

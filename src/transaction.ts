@@ -35,6 +35,10 @@ export class Transaction {
 // TODO: add support for callable / sendable methods with args...
 export class ContractTransaction extends Transaction {
   public data: string;
+  public initiaterNode: string;
+  public initiaterAddress: Address;
+  public method: string;
+
   constructor(
     senderNodeId: string,
     senderAddress: Address,
@@ -43,6 +47,9 @@ export class ContractTransaction extends Transaction {
     value: number,
     transactionType: string,
     nonce: number,
+    initiaterNode: string,
+    initiaterAddress: Address,
+    method: string,
     data?: string
   ) {
     super(
@@ -55,6 +62,9 @@ export class ContractTransaction extends Transaction {
       nonce
     );
     this.data = data;
+    this.initiaterNode = initiaterNode;
+    this.initiaterAddress = initiaterAddress;
+    this.method = method;
   }
 }
 

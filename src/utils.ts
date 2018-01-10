@@ -3,8 +3,12 @@ import axios from "axios";
 import { serialize, deserialize } from "serializer.ts/Serializer";
 import { Blockchain } from "./blockchain";
 import { Node } from "./node";
-import { Transaction } from "./transaction";
-import { Address, CONTRACT_ACCOUNT } from "./accounts";
+import {
+  Transaction,
+  ContractTransaction,
+  AccountTransaction
+} from "./transaction";
+import { Address, ContractAccount, CONTRACT_ACCOUNT } from "./accounts";
 import { ACTIONS } from "./actions";
 import { Block } from "./block";
 
@@ -16,7 +20,7 @@ export const getNodeAndAccountIndex = (
   type?: string
 ) => {
   if (type === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT) {
-    console.log(`I enter this edge case here!!`);
+    console.log(`I enter this edge case here!! ${nodeAddress} ${nodeId}`);
     return getNodeAndContractIndex(nodes, nodeId, nodeAddress, errMsg);
   }
 
@@ -301,7 +305,7 @@ export const applyNewBlockTransactions = (
 // TODO: Should also support MESSAGING PROTOCOL?
 export const updateAccountsWithFinalizedTransactions = (
   blockchain: Blockchain,
-  txpool: Array<Transaction>
+  txpool: Array<any>
 ) => {
   txpool.forEach(tx => {
     if (
@@ -318,23 +322,46 @@ export const updateAccountsWithFinalizedTransactions = (
       "Utils: updateAccountsWithFinalizedTransactions senderIndexes "
     );
 
+    tx.transactionType === ACTIONS.TRANSACTION_CONTRACT_ACCOUNT &&
+      console.log(tx);
+
     // Update sender account information
     blockchain.nodes[nodeIdx].accounts[accountIdx].balance -= tx.value;
 
     // Update account nonce
     blockchain.nodes[nodeIdx].accounts[accountIdx].nonce++;
 
-    // Update receiver account information
-    const receiverIndexes = getNodeAndAccountIndex(
-      blockchain.nodes,
-      tx.recipientNodeId,
-      tx.recipientAddress,
-      "Utils: updateAcocuntsWithFinalizedTransaction recipientIndex "
-    );
-    blockchain.nodes[receiverIndexes.nodeIdx].accounts[
-      receiverIndexes.accountIdx
-    ].balance +=
-      tx.value;
+    /*
+    TODO: 
+    Contracts execution can emit a transaction, need to implement this
+    Update receiver account information
+    */
+    if (tx.transactionType === ACTIONS.TRANSACTION_EXTERNAL_ACCOUNT) {
+      const receiverIndexes = getNodeAndAccountIndex(
+        blockchain.nodes,
+        tx.recipientNodeId,
+        tx.recipientAddress,
+        "Utils: updateAcocuntsWithFinalizedTransaction recipientIndex "
+      );
+      blockchain.nodes[receiverIndexes.nodeIdx].accounts[
+        receiverIndexes.accountIdx
+      ].balance +=
+        tx.value;
+    } else {
+      const parsedContract = ContractAccount.parseContractData(
+        blockchain,
+        nodeIdx,
+        accountIdx,
+        tx.nonce
+      );
+      parsedContract[tx.method]();
+      ContractAccount.updateContractState(
+        blockchain,
+        nodeIdx,
+        accountIdx,
+        parsedContract
+      );
+    }
   });
   blockchain.minedTxAwaitingConsensus = [];
 };

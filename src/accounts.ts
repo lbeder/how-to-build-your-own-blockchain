@@ -137,20 +137,17 @@ export class ContractAccount extends Account {
   static parseContractData(
     blockchain: Blockchain,
     nodeIdx: number,
-    contractIdx: number
+    contractIdx: number,
+    nonce: number
   ): any {
-    let parsedContract: any;
-    if (blockchain.nodes[nodeIdx].accounts[contractIdx].nonce === 0) {
-      parsedContract = eval(
-        blockchain.nodes[nodeIdx].accounts[contractIdx].data
-      );
-    } else {
-      parsedContract = JSON.parse(
-        blockchain.nodes[nodeIdx].accounts[contractIdx].data,
-        this.reviver
-      );
+    if (nonce === 0) {
+      console.log("I GET TO EVAL BRUH");
+      return eval(blockchain.nodes[nodeIdx].accounts[contractIdx].data);
     }
-    return parsedContract;
+    return JSON.parse(
+      blockchain.nodes[nodeIdx].accounts[contractIdx].data,
+      this.reviver
+    );
   }
 
   static updateContractState(
