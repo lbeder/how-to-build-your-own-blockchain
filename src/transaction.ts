@@ -90,6 +90,4 @@ export class AccountTransaction extends Transaction {
       senderDigitalSignature
     );
   }
-
-  incrementAccountNonce(senderNodeId: string, senderAddress: Address) {}
 }

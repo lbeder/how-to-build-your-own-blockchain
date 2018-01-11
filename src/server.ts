@@ -238,12 +238,6 @@ app.put(
       "Could not find contract node or address"
     );
 
-    // if (typeof parsedContract[method] !== "function") {
-    //   throw new Error(
-    //     `server.ts: mutateContract -> method ${method} does not exist on contract...`
-    //   );
-    // }
-
     // Create Transaction
     const { initiaterNode, initiaterAddress, value } = req.body;
 

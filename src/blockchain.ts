@@ -46,7 +46,6 @@ export class Blockchain {
   public nodeId: string;
   public nodes: Array<Node>;
   public blocks: Array<Block>;
-  public transactionBuffer: Array<Transaction>;
   public pendingBlock: Block;
   public minedTxAwaitingConsensus: Array<Transaction>;
   public transactionPool: Array<Transaction>;
@@ -56,7 +55,6 @@ export class Blockchain {
     this.nodeId = nodeId;
     this.nodes = [];
     this.transactionPool = [];
-    this.transactionBuffer = [];
     this.pendingBlock = undefined;
     this.minedTxAwaitingConsensus = [];
     this.storagePath = path.resolve(
@@ -270,8 +268,6 @@ export class Blockchain {
       (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))
     ) {
       this.blocks = blockchains[bestCandidateIndex];
-      this.transactionPool = this.transactionBuffer;
-      this.transactionBuffer = []; // TODO: Buffer
 
       this.save();
 
@@ -284,9 +280,6 @@ export class Blockchain {
         this,
         this.minedTxAwaitingConsensus
       );
-    } else {
-      this.transactionPool = this.transactionBuffer;
-      this.transactionBuffer = [];
     }
 
     return false;
@@ -357,7 +350,6 @@ export class Blockchain {
       transaction.nonce
     );
     if (!isNonceValid) {
-      this.transactionBuffer.push(transaction);
       return false;
     }
 

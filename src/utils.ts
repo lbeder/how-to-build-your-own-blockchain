@@ -351,7 +351,19 @@ export const updateAccountsWithFinalizedTransactions = (
         accountIdx,
         blockchain.nodes[nodeIdx].accounts[accountIdx].nonce
       );
-      parsedContract[tx.method]();
+
+      if (typeof parsedContract[tx.method] !== "function") {
+        throw new Error(
+          `server.ts: mutateContract -> method ${
+            tx.method
+          } does not exist on contract...`
+        );
+      }
+
+      // TODO: save emittable to array which will later be used to creat TX Post requests
+      const emittedTx = parsedContract[tx.method]();
+      console.log("IS METHOD BEING CALLED...");
+      console.log(emittedTx);
       ContractAccount.updateContractState(
         blockchain,
         nodeIdx,
@@ -361,14 +373,6 @@ export const updateAccountsWithFinalizedTransactions = (
     }
   });
   blockchain.minedTxAwaitingConsensus = [];
-};
-
-const matchNodeToOrigin = () => {
-  return {
-    "localhost:3000": "A",
-    "localhost:3001": "B",
-    "localhost:3002": "C"
-  };
 };
 
 export const isPendingBlockInChain = (
