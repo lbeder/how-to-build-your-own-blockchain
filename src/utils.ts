@@ -290,17 +290,6 @@ export const validateAdequateFunds = (
   });
 };
 
-export const applyNewBlockTransactions = (
-  blockchain: Blockchain,
-  newBlocks: Block[]
-) => {
-  const startingBlockIdx = blockchain.blocks.length - newBlocks.length;
-  const blocksToUpdate = newBlocks.slice(startingBlockIdx);
-  blocksToUpdate.forEach(block =>
-    updateAccountsWithFinalizedTransactions(blockchain, block.transactions)
-  );
-};
-
 // TODO: Should also support MESSAGING PROTOCOL?
 export const updateAccountsWithFinalizedTransactions = (
   blockchain: Blockchain,
@@ -321,11 +310,6 @@ export const updateAccountsWithFinalizedTransactions = (
       "Utils: updateAccountsWithFinalizedTransactions senderIndexes "
     );
 
-    /*
-    TODO: 
-    Contracts execution can emit a transaction, need to implement this
-    Update receiver account information
-    */
     if (tx.transactionType === ACTIONS.TRANSACTION_EXTERNAL_ACCOUNT) {
       // Update sender account information
       blockchain.nodes[nodeIdx].accounts[accountIdx].balance -= tx.value;
@@ -360,10 +344,11 @@ export const updateAccountsWithFinalizedTransactions = (
         );
       }
 
-      // TODO: save emittable to array which will later be used to creat TX Post requests
       const emittedTx = parsedContract[tx.method]();
-      console.log("IS METHOD BEING CALLED...");
-      console.log(emittedTx);
+      if (emittedTx) {
+        blockchain.emittedTXMessages.push(emittedTx);
+      }
+
       ContractAccount.updateContractState(
         blockchain,
         nodeIdx,
@@ -385,4 +370,39 @@ export const isPendingBlockInChain = (
       block => JSON.stringify(block) === JSON.stringify(pendingBlock)
     ) !== -1
   );
+};
+
+const mapNodeIdToPort = {
+  A: "3000",
+  B: "3001",
+  C: "3002"
+};
+
+export const emittableTXMessagesToTXPostReq = async (
+  nodeId: string,
+  emittedTXReqArr: Array<any>
+) => {
+  const requests = emittedTXReqArr.map(tx => {
+    const res = axios.post(
+      `http://localhost:${mapNodeIdToPort[nodeId]}/transactions`,
+      tx
+    );
+    console.log(`http://localhost:${mapNodeIdToPort[nodeId]}/transactions`);
+    return res;
+  });
+
+  if (requests.length === 0) {
+    console.log(
+      `utils.ts: emittableTxMessagesToTXPostReq -> There were no emitted TX requests`
+    );
+    return;
+  }
+
+  try {
+    const res = await axios.all(requests);
+  } catch (e) {
+    console.log(`utils.ts: emittableTxMessagesToTXPostReq ${e}`);
+  }
+
+  return;
 };

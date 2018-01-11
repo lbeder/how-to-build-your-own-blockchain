@@ -278,10 +278,13 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     method,
     data
   } = req.body;
+  // TODO: x origin req should take into consideration contract constraints
   if (isCrossOriginRequest(senderNodeId, nodeId)) {
-    throw new Error(
+    console.log(
       `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
     );
+    // res.end("No cross origin requests.");
+    return;
   }
   const value = Number(req.body.value);
 
@@ -333,10 +336,6 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.nodes));
-});
-
-app.get("/transactionBuffer", (req: express.Request, res: express.Response) => {
-  res.json(serialize(blockchain.transactionBuffer));
 });
 
 app.post("/nodes", (req: express.Request, res: express.Response) => {

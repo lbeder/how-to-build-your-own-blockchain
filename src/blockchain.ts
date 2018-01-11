@@ -30,7 +30,7 @@ import {
   isCrossOriginRequest,
   getNodeAndAccountIndex,
   isPendingBlockInChain,
-  applyNewBlockTransactions
+  emittableTXMessagesToTXPostReq
 } from "./utils";
 import { currentId } from "async_hooks";
 export class Blockchain {
@@ -48,6 +48,7 @@ export class Blockchain {
   public blocks: Array<Block>;
   public pendingBlock: Block;
   public minedTxAwaitingConsensus: Array<Transaction>;
+  public emittedTXMessages: Array<any>;
   public transactionPool: Array<Transaction>;
   private storagePath: string;
 
@@ -57,6 +58,7 @@ export class Blockchain {
     this.transactionPool = [];
     this.pendingBlock = undefined;
     this.minedTxAwaitingConsensus = [];
+    this.emittedTXMessages = [];
     this.storagePath = path.resolve(
       __dirname,
       "../",
@@ -280,6 +282,8 @@ export class Blockchain {
         this,
         this.minedTxAwaitingConsensus
       );
+      emittableTXMessagesToTXPostReq(this.nodeId, this.emittedTXMessages);
+      this.emittedTXMessages = [];
     }
 
     return false;
