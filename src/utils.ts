@@ -382,19 +382,11 @@ export const emittableTXMessagesToTXPostReq = async (
   nodeId: string,
   emittedTXReqArr: Array<any>
 ) => {
-  const requests = emittedTXReqArr.map(tx => {
-    const res = axios.post(
-      `http://localhost:${mapNodeIdToPort[nodeId]}/transactions`,
-      tx
-    );
-    console.log(`http://localhost:${mapNodeIdToPort[nodeId]}/transactions`);
-    return res;
-  });
+  const requests = emittedTXReqArr.map(tx =>
+    axios.post(`http://localhost:${mapNodeIdToPort[nodeId]}/transactions`, tx)
+  );
 
   if (requests.length === 0) {
-    console.log(
-      `utils.ts: emittableTxMessagesToTXPostReq -> There were no emitted TX requests`
-    );
     return;
   }
 

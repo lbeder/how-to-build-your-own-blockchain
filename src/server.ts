@@ -219,10 +219,7 @@ app.post(
         res.json(err);
         return;
       });
-
-    res.status(500);
-
-    res.json(data);
+    res.json(`Successfully deployed ${address} contract`);
   }
 );
 
@@ -259,7 +256,7 @@ app.put(
       false
     );
 
-    res.json(blockchain.nodes[nodeIdx].accounts[accountIdx]);
+    res.json(`Successfully mutated ${address} contract state`);
   }
 );
 
