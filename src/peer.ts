@@ -1,4 +1,3 @@
-import {EventEmitter} from "events";
 import {Server} from "./shim/express";
 
 export interface Resolver {

@@ -4,7 +4,7 @@ import {Peer} from './peer';
 const SimpleWebRTC = require('simplewebrtc');
 
 export class SimpleNode {
-  public peers: { [key: string]: any };
+  public peers: { [peerId: string]: Peer };
 
   constructor(app: Server) {
     const webrtc = new SimpleWebRTC({    // we don't do video

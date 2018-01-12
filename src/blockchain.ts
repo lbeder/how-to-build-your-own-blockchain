@@ -1,7 +1,16 @@
-import {Transaction, Block} from "./final";
+import {Block} from "./block";
+import {Transaction} from "./transaction";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
-import {Address} from "./final";
+import {clearInterval} from "timers";
+
+export interface MiningHandle {
+  stop(): void
+
+  newBlockPromise: Promise<Block>
+  transactionsCount: number
+  lastBlock: number
+}
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
@@ -12,12 +21,14 @@ export class Blockchain {
 
   public static readonly MINING_SENDER = "<COINBASE>";
   public static readonly MINING_REWARD = 50;
+  public static readonly MAX_BLOCK_SIZE = 10;
 
   public nodeId: string;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
 
   constructor(nodeId: string) {
+    this.blocks = [Blockchain.GENESIS_BLOCK];
     this.nodeId = nodeId;
     this.transactionPool = [];
   }
@@ -73,8 +84,11 @@ export class Blockchain {
     }
   }
 
-  // Receives candidate blockchains, verifies them, and if a longer and valid alternative is found - uses it to replace
-  // our own.
+  private handleNewBlock(newBlock: Block) {
+    this.blocks.push(newBlock);
+    this.transactionPool = [];
+  }
+
   public consensus(blockchains: Array<Array<Block>>): boolean {
     // Iterate over the proposed candidates and find the longest, valid, candidate.
     let maxLength: number = 0;
@@ -118,47 +132,59 @@ export class Blockchain {
   }
 
   // Mines for block.
-  private mineBlock(transactions: Array<Transaction>): Block {
-    // Create a new block which will "point" to the last block.
-    const lastBlock = this.getLastBlock();
-    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
+  public mineBlock(): MiningHandle {
+    let resolve: any;
+    const miningPromise = new Promise<Block>(resolver => {
+      resolve = resolver;
+    });
 
-    while (true) {
+    const relevantTransactions = this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE);
+
+    // Create a new block which will "point" to the last block.
+    const transactions = [
+      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
+      ...relevantTransactions
+    ];
+    const lastBlock = this.getLastBlock();
+    const newBlock = new Block(
+      lastBlock.blockNumber + 1,
+      transactions,
+      Blockchain.now(),
+      0,
+      lastBlock.sha256()
+    );
+
+    let interval: NodeJS.Timer;
+    const stop = () => {
+      clearInterval(interval);
+    };
+    interval = setInterval(() => {
       const pow = newBlock.sha256();
       console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW: ${pow}!`);
-        break;
+
+        this.handleNewBlock(newBlock);
+        clearInterval(interval);
+        resolve(newBlock);
       }
 
       newBlock.nonce++;
-    }
+    }, 0);
 
-    return newBlock;
+    return {
+      stop,
+      newBlockPromise: miningPromise,
+      transactionsCount: relevantTransactions.length,
+      lastBlock: lastBlock.blockNumber
+    };
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
+  public submitTransaction(senderAddress: string, recipientAddress: string, value: number) {
+    // TODO: if the sender address already exists in the pool reject the transaction
     this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
-  }
-
-  // Creates new block on the blockchain.
-  public createBlock(): Block {
-    // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
-      ...this.transactionPool];
-
-    // Mine the transactions in a new block.
-    const newBlock = this.mineBlock(transactions);
-
-    // Append the new block to the blockchain.
-    this.blocks.push(newBlock);
-
-    // Remove the mined transactions.
-    this.transactionPool = [];
-
-    return newBlock;
   }
 
   public getLastBlock(): Block {

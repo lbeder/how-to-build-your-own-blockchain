@@ -34,7 +34,7 @@ export class Server {
 
       match.fn(request, new Response(request));
     } catch (e) {
-      request.respond(null, 500);
+      request.respond({error: e.message || 'Unknown Error Occurred'}, e.status || 500);
     }
     return request.promise;
   }

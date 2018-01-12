@@ -3,15 +3,18 @@ import {Blockchain} from './blockchain';
 import express from './shim/express';
 import {routes} from './routes';
 import {SimpleNode} from './simple-node';
+import {NodeController} from './node-controller';
 
 const nodeId = uuidv4();
 
 const app = express();
-const blockChain = new Blockchain(nodeId);
+const blockchain = new Blockchain(nodeId);
 const simpleNode = new SimpleNode(app);
-routes(app, blockChain, simpleNode.peers);
+const controller = new NodeController(blockchain, simpleNode.peers);
+routes(app, controller);
 
-(<any>window).blockChain = blockChain;
+(<any>window).blockChain = blockchain;
 (<any>window).simpleNode = simpleNode;
 (<any>window).peers = simpleNode.peers;
 (<any>window).app = app;
+(<any>window).controller = controller;
