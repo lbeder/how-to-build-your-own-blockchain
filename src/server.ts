@@ -27,7 +27,8 @@ import {
   getNodeAndContractIndex,
   getConsensus,
   getDigitalSignature,
-  isCrossOriginRequest
+  isCrossOriginRequest,
+  getPublicKey
 } from "./utils";
 
 // Web server:
@@ -106,6 +107,17 @@ app.post("/createAccount", (req: express.Request, res: express.Response) => {
     `Creation of account ${address} of type ${account_type} with balance ${balance}`
   );
 });
+
+app.get(
+  "/accounts/publicKey",
+  (req: express.Request, res: express.Response) => {
+    console.log("PUB KEY BY PEM....");
+    // const { accountId } = req.params;
+    const accountId = "Alice";
+    const pubkey = getPublicKey(blockchain, nodeId, accountId);
+    res.json(pubkey);
+  }
+);
 
 // TODO: Omer
 app.post(

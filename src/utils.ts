@@ -372,7 +372,7 @@ export const isPendingBlockInChain = (
   );
 };
 
-const mapNodeIdToPort = {
+const mapNodeIdToPort: any = {
   A: "3000",
   B: "3001",
   C: "3002"
@@ -397,4 +397,19 @@ export const emittableTXMessagesToTXPostReq = async (
   }
 
   return;
+};
+
+export const getPublicKey = (
+  blockchain: Blockchain,
+  nodeId: string,
+  accountAddress: Address
+) => {
+  const { nodeIdx, accountIdx } = getNodeAndAccountIndex(
+    blockchain.nodes,
+    nodeId,
+    accountAddress,
+    "Utils: getPublicKeys senderIndexes "
+  );
+
+  return blockchain.nodes[nodeIdx].accounts[accountIdx].getPublicKey();
 };

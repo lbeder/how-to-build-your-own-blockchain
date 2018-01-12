@@ -78,6 +78,16 @@ export class ExternalAccount extends Account {
     );
   }
 
+  getPublicKey() {
+    // TODO: send PEM file
+    fs.readFile(`${this.storagePath}/pubkey.pem`, "utf8", (err, data) => {
+      if (err) throw err;
+      console.log("SENDING PUBLIC KEY....");
+      console.log(data);
+      return data;
+    });
+  }
+
   // TODO: Encrypting usually work with someone elses key.. This is weird
   encryptActionRequest(action: string): string {
     return this.privateKey.encrypt(action, "utf8", "base64");
@@ -106,7 +116,7 @@ export class ExternalAccount extends Account {
   }
 
   // TODO: Send msg, ie. transfer funds or trigger contract execution
-  sendMessage(requested_transaction: transaction) {}
+  // sendMessage(requested_transaction: transaction) {}
 }
 
 export class ContractAccount extends Account {
