@@ -11,16 +11,18 @@ trap "kill 0" EXIT
 # h - help message
 
 #set default options:
-NUMBER_OF_USERS=5;
-VOTE_OPTIONS='yes,no';
+NUMBER_OF_NODES=5;
+NUMBER_OF_VOTERS=20;
+VOTE_OPTIONS='yes,no,abstained';
 MISSING_ARG='';
 BASE_PORT=3000;
 
-while getopts :n:o:h option
+while getopts :n:m:o:h option
 do
  case "${option}"
  in
- n) NUMBER_OF_USERS=${OPTARG};;
+ n) NUMBER_OF_NODES=${OPTARG};;
+ m) NUMBER_OF_VOTERS=${OPTARG};;
  o) VOTE_OPTIONS=${OPTARG};;
  ?) MISSING_ARG==${OPTARG};;
  esac
@@ -31,22 +33,23 @@ then
     echo '';
     echo 'dvote - usage options: ';
     echo '----------------------';
-    echo '-n : Number of voters (integer)';
+    echo '-n : Number of nodes (integer)';
+    echo '-m : Number of voters (integer)';
     echo '-o : Voting options - A string of options seperated by comma (default = yes,no)';
     echo ' ';
     echo ' example:';
-    echo "dvote -n 15 -o 'yes,no,maybe'"
+    echo "dvote -n 6 -m 15 -o 'yes,no,maybe'"
     echo ' ';
     exit;
 fi
 echo 'all is well'
 
-for index in $(eval echo "{0..$((NUMBER_OF_USERS-1))}");
+for index in $(eval echo "{0..$((NUMBER_OF_NODES-1))}");
 do
-    echo processing ${index} of ${NUMBER_OF_USERS};
+    echo processing ${index} of ${NUMBER_OF_NODES};
     echo using port $(($BASE_PORT+$index)) in node "NODE"-${index}
 
-    node ../dist/14_d_vote.js --port=$(($BASE_PORT+$index)) --id="NODE"-${index} &
+    node ../dist/14_d_vote.js --port=$(($BASE_PORT+$index)) --id="NODE"-${index} --voting_options="${VOTE_OPTIONS}" &
     sleep 0.5
 
 done
@@ -56,23 +59,24 @@ done
 
 
 
+################################
 # Register the nodes.
 echo -e && read -n 1 -s -r -p "Registering the node. Press any key to continue..." && echo -e
 
-for index in $(eval echo "{0..$((NUMBER_OF_USERS-1))}")
+for index in $(eval echo "{0..$((NUMBER_OF_NODES-1))}")
 do
     NODE_ID="NODE-${index}"
     NODE_PORT="$(($BASE_PORT+$index))"
     NODE_URL="http://localhost:${NODE_PORT}"
 
-    for to_index in $(eval echo "{0..$((NUMBER_OF_USERS-1))}")
+    for to_index in $(eval echo "{0..$((NUMBER_OF_NODES-1))}")
     do
         DESTINATION_URL="http://localhost:$(($BASE_PORT+$to_index))/nodes"
         if [ $index != $to_index ]
         then
-            echo registering ${NODE_ID} with port ${NODE_PORT} to node ${NODE_URL};
+            echo registering ${NODE_ID} with port ${NODE_PORT} to node ${DESTINATION_URL};
 
-            curl -v -X POST -H "Content-Type: application/json" -d "{
+            curl -X POST -H "Content-Type: application/json" -d "{
                 \"id\": \"${NODE_ID}\",
                 \"url\": \"${NODE_URL}\"
                 }" ${DESTINATION_URL} -w "\n"
@@ -80,35 +84,67 @@ do
     done
 done
 
-wait 
-exit
+################################
+# Start voting simulation
+echo -e && read -n 1 -s -r -p "Press any key to start voting..." && echo -e
 
-# Submit 2 transactions to the first node.
-echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
+## declare an array of voting options
+IFS=', ' read -r -a voting_options_arr <<< $VOTE_OPTIONS
 
-curl -X POST -H "Content-Type: application/json" -d '{
- "senderAddress": "Alice",
- "recipientAddress": "Bob",
- "value": "1000"
-}' "${NODE1_URL}/transactions" -w "\n"
+for index in $(eval echo "{0..$((NUMBER_OF_VOTERS-1))}")
+do
+    #Randommally select a node
+    node=$(( $RANDOM % $NUMBER_OF_NODES )); #echo $node
 
-curl -X POST -H "Content-Type: application/json" -d '{
- "senderAddress": "Alice",
- "recipientAddress": "Eve",
- "value": "12345"
-}' "${NODE1_URL}/transactions" -w "\n"
+    #Randommally select a voting option
+    idx=$(( $RANDOM % ${#voting_options_arr[@]} )); 
+    echo ${voting_options_arr[$idx]};
+
+    #send a random vote to a random node
+    DESTINATION_URL="http://localhost:$(($BASE_PORT+$node))/vote"
+
+    echo voting ${voting_options_arr[$idx]} using node at url: http://localhost:$(($BASE_PORT+$node))/vote;
+
+     curl -X POST -H "Content-Type: application/json" -d "{
+         \"voterId\": \"${index}\",
+         \"votingValue\": \"${voting_options_arr[$idx]}\"
+         }" ${DESTINATION_URL} -w "\n"
+
+done
+
+sleep 1
+
+
 
 # Mine 3 blocks on the first node.
-echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to start mining..." && echo -e
+echo "{0..$(((NUMBER_OF_NODES-1)/2))}"
+echo "starting loop"
+#for index in $(eval echo "{0..$((NUMBER_OF_NODES-1))}")
 
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+for index in $(eval echo "{0..$(( $NUMBER_OF_NODES - 1 ))}")
+do
+    echo "Mining Node ${index}"
+    NODE_ID="NODE-${index}"
+    NODE_PORT="$(($BASE_PORT+$index))"
+    NODE_URL="http://localhost:${NODE_PORT}"
+
+    curl -X POST -H "Content-Type: application/json" "${NODE_URL}/blocks/mine" -w "\n"
+
+done
+
+
 
 # Reach a consensus on both of the nodes:
 echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue..." && echo -e
 
-curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
-curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
+for index in $(eval echo "{0..$(( $NUMBER_OF_NODES - 1 ))}")
+do
 
+    NODE_PORT="$(($BASE_PORT+$index))"
+    NODE_URL="http://localhost:${NODE_PORT}"
+
+    curl -X PUT "${NODE_URL}/nodes/consensus" -w "\n"
+
+done
 wait

@@ -182,7 +182,7 @@ export class Blockchain {
     // Iterate over the proposed candidates and find the longest, valid, candidate.
     let maxLength: number = 0;
     let bestCandidateIndex: number = -1;
-
+    
     for (let i = 0; i < blockchains.length; ++i) {
       const candidate = blockchains[i];
 
@@ -310,7 +310,7 @@ function isValidVoter(voter:string) {
 
   for (let i=0; i< blockchain.transactionPool.length;i++ ) {
     if (blockchain.transactionPool[i].senderAddress == voter) {
-      console.log('Voter ',voter,'has already voted. Vote found it transaction pool ',i);
+      console.log('Voter ',voter,'has already voted. Vote found in transaction pool ',i);
       return false
     }
   }
@@ -450,7 +450,7 @@ app.get("/voting_options", (req: express.Request, res: express.Response) => {
 if (!module.parent) {
   app.listen(PORT);
 
-  console.log(`Web server started on port ${PORT}. Node ID is: ${nodeId}`);
+  console.log(`\nWeb server started on port ${PORT}. Node ID is: ${nodeId}`);
 }
 
 //Allow a user to place his vote on the block chain
