@@ -280,7 +280,6 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     console.log(
       `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
     );
-    // res.end("No cross origin requests.");
     return;
   }
   const value = Number(req.body.value);
