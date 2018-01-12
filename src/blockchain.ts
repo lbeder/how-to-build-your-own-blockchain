@@ -2,7 +2,7 @@ import {Block} from "./block";
 import {Transaction} from "./transaction";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
-import {clearInterval} from "timers";
+import {clearInterval, setInterval} from "timers";
 
 export interface MiningHandle {
   stop(): void
@@ -16,7 +16,7 @@ export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
 
-  public static readonly DIFFICULTY = 4;
+  public static readonly DIFFICULTY = 10;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
   public static readonly MINING_SENDER = "<COINBASE>";
@@ -84,9 +84,9 @@ export class Blockchain {
     }
   }
 
-  private handleNewBlock(newBlock: Block) {
+  private handleNewBlock(newBlock: Block, acceptedTransactionsCount: number) {
     this.blocks.push(newBlock);
-    this.transactionPool = [];
+    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount);
   }
 
   public consensus(blockchains: Array<Array<Block>>): boolean {
@@ -160,14 +160,15 @@ export class Blockchain {
     };
     interval = setInterval(() => {
       const pow = newBlock.sha256();
-      console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
+      // console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
 
       if (Blockchain.isPoWValid(pow)) {
-        console.log(`Found valid POW: ${pow}!`);
+        console.log(`Found valid POW for block ${newBlock.blockNumber}: ${pow}!`);
 
-        this.handleNewBlock(newBlock);
-        clearInterval(interval);
+        this.handleNewBlock(newBlock, relevantTransactions.length);
+        stop();
         resolve(newBlock);
+        return;
       }
 
       newBlock.nonce++;

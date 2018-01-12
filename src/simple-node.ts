@@ -6,7 +6,7 @@ const SimpleWebRTC = require('simplewebrtc');
 export class SimpleNode {
   public peers: { [peerId: string]: Peer };
 
-  constructor(app: Server) {
+  constructor(app: Server, onPeerConnected: () => void) {
     const webrtc = new SimpleWebRTC({    // we don't do video
       localVideoEl: '',
       remoteVideosEl: '',
@@ -21,10 +21,24 @@ export class SimpleNode {
     this.peers = {};
 
     webrtc.on('createdPeer', (rawPeer: any) => {
-      rawPeer.on('channelOpen', () => {
-        console.log('data channel open')
+      // const isInitiator = rawPeer.pc.pc.localDescription.type === 'offer';
+      // console.log("peer id", isInitiator, rawPeer.pc.pc.localDescription);
+      let calledNewPeer = false;
+      rawPeer.on('channelOpen', (channel: any) => {
+        if (channel.label === 'simplewebrtc') return;
+        console.log(`Data channel [${channel.label}] opened with ${rawPeer.id}`);
+        if (!calledNewPeer) {
+          calledNewPeer = true;
+          // delay peer announcement to allow data channel negotiation
+          setTimeout(() => onPeerConnected(), 500);
+        }
       });
-      rawPeer.getDataChannel('label');
+
+      if (webrtc.connection.getSessionid() > rawPeer.id) {
+        console.log('Initiating Data channel to', rawPeer.id);
+        rawPeer.getDataChannel('webcoin-channel');
+      }
+
       console.log('Peer connected', rawPeer.id);
       rawPeer.pc.on('iceConnectionStateChange', () => {
         const state = rawPeer.pc.iceConnectionState;
@@ -34,7 +48,7 @@ export class SimpleNode {
       });
       const abstractedPeer = {
         send: (message: any) => {
-          rawPeer.sendDirectly.apply(rawPeer, ['label', message]);
+          rawPeer.sendDirectly.apply(rawPeer, ['webcoin-channel', message]);
         },
         on: rawPeer.on.bind(rawPeer),
         off: rawPeer.off.bind(rawPeer)
@@ -50,9 +64,8 @@ export class SimpleNode {
     webrtc.on('connectionReady', () => {
       console.log('SimpleWebRTC Ready');
       webrtc.joinRoom(roomName, (err: any, res: any) => {
-        console.log('joinRoom', err, res);
+        if (err) console.error('joinRoom', err);
       });
-
     });
   }
 }

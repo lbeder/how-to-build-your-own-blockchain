@@ -63,15 +63,30 @@ export class NodeController {
   }
 
   private notifyAll(route: string) {
-    Object.values(this.peers).forEach(node => node.fetch(route, null, 'post'));
-  }
+    Promise.all(
+      Object.values(this.peers)
+        .map(node => node.fetch(route, null, 'post'))
+    )
+      .catch(err => {
+        console.log('Some notifications failed', err);
+      })
+  };
 
-  private async consensus() {
-    const remoteBlockchains = await Promise.all(Object.values(this.peers).map(node => node.fetch('/blocks')));
-    const dehydratedBlockchains = remoteBlockchains.map(data => deserialize<Block[]>(Block, data));
-    const success = this.blockchain.consensus(dehydratedBlockchains);
+  public async consensus() {
+    if (!Object.keys(this.peers).length) return;
 
-    if (!success) throw new Error("Can't reach a consensus");
+    const blockchainsResults = await Promise.all(Object.values(this.peers).map(node => node.fetch('/blocks')));
+
+    const blockchains = blockchainsResults.map(({data}) => deserialize<Block[]>(Block, data));
+    const success = this.blockchain.consensus(blockchains);
+
+    if (success) {
+      console.log(`Reached consensus from ${blockchainsResults.length} nodes`);
+    }
+    else {
+      console.log(`Can't reach a consensus ${blockchainsResults.length}`);
+    }
+
     this.startMining();
   }
 

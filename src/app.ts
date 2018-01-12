@@ -6,11 +6,15 @@ import {SimpleNode} from './simple-node';
 import {NodeController} from './node-controller';
 
 const nodeId = uuidv4();
+let controller: NodeController;
+const onNewPeer = () => {
+  controller.handleNewBlockNotifications();
+};
 
 const app = express();
 const blockchain = new Blockchain(nodeId);
-const simpleNode = new SimpleNode(app);
-const controller = new NodeController(blockchain, simpleNode.peers);
+const simpleNode = new SimpleNode(app, onNewPeer);
+controller = new NodeController(blockchain, simpleNode.peers);
 routes(app, controller);
 
 (<any>window).blockChain = blockchain;

@@ -9,6 +9,7 @@ export class Peer {
   requests: Map<number, Resolver>;
   peer: { send: (data: any) => {}; on: any; off: any };
   requestId: number;
+  private static readonly REQUEST_TIMEOUT = 10000;
 
   constructor(peer: any) {
     this.requestId = 0;
@@ -24,8 +25,23 @@ export class Peer {
       method,
       payload: message
     });
+
     this.peer.send(encodedMessage);
-    return new Promise((resolve, reject) => {
+    return new Promise((resolver, rejector) => {
+      let done = false;
+      const resolve = (data: any) => {
+        if (done) return;
+        done = true;
+        resolver(data);
+      };
+
+      const reject = (err: Error) => {
+        if (done) return;
+        done = true;
+        rejector(err);
+      };
+
+      setTimeout(reject, Peer.REQUEST_TIMEOUT, new Error('Request Timeout'));
       this.requests.set(this.requestId++, {resolve, reject} as Resolver);
     });
   }
