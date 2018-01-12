@@ -18,6 +18,7 @@ export class Blockchain {
   public transactionPool: Array<Transaction>;
 
   constructor(nodeId: string) {
+    this.blocks = [Blockchain.GENESIS_BLOCK];
     this.nodeId = nodeId;
     this.transactionPool = [];
   }

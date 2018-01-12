@@ -58,8 +58,11 @@ export function routes(app: any, blockchain: any, peers: any) {
   });
 
   app.put("/nodes/consensus", async (req: any, res: any) => {
-    const blockchains = await Promise.all(Object.values(peers).map(node => node.fetch('/blocks')));
-    const success = blockchain.consensus(blockchains.map(data => deserialize<Block[]>(Block, data)));
+    const blockchainsResults = await Promise.all(Object.values(peers).map(node => node.fetch('/blocks')));
+    let blockchains = blockchainsResults.map((blockChainResult)=>{
+      return deserialize<Block[]>(Block, blockChainResult.data);
+    });
+    const success = blockchain.consensus(blockchains);
 
     if (success) {
       res.json(`Reached a consensus on a new state.`);
