@@ -79,13 +79,7 @@ export class ExternalAccount extends Account {
   }
 
   getPublicKey() {
-    // TODO: send PEM file
-    fs.readFile(`${this.storagePath}/pubkey.pem`, "utf8", (err, data) => {
-      if (err) throw err;
-      console.log("SENDING PUBLIC KEY....");
-      console.log(data);
-      return data;
-    });
+    return fs.readFileSync(`${this.storagePath}/pubkey.pem`, "utf8");
   }
 
   // TODO: Encrypting usually work with someone elses key.. This is weird

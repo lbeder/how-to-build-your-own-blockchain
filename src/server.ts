@@ -109,12 +109,11 @@ app.post("/createAccount", (req: express.Request, res: express.Response) => {
 });
 
 app.get(
-  "/accounts/publicKey",
+  "/publicKey/:node/:accountName",
   (req: express.Request, res: express.Response) => {
-    console.log("PUB KEY BY PEM....");
-    // const { accountId } = req.params;
-    const accountId = "Alice";
-    const pubkey = getPublicKey(blockchain, nodeId, accountId);
+    const { node, accountName } = req.params;
+    console.log(`Account name: ${accountName}`);
+    const pubkey = getPublicKey(blockchain, node, accountName);
     res.json(pubkey);
   }
 );
