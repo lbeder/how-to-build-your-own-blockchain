@@ -1,10 +1,10 @@
-export class Request {  
+export class Request {
     params: any;
     body: string;
     method: 'put' | 'get' | 'post';
     url: string;
     reject: (reason?: any) => void;
-    resolve: (value?: {} | PromiseLike<{}>) => void;
+    resolve: (resolve: any) => void;
     promise: Promise<{data: any, status: number}>;
     constructor({url, method, body}: {url: string, method: 'get' | 'put' | 'post', body: string }) {
         this.url = url;
@@ -16,9 +16,6 @@ export class Request {
         });
     }
     respond(data: any, status: number) {
-        this.resolve(JSON.stringify({
-            data, 
-            status
-        }));
+        this.resolve({data, status});
     }
 }

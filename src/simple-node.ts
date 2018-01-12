@@ -20,26 +20,39 @@ export class SimpleNode {
     });
     this.peers = {};
 
-    webrtc.createRoom('my-block-chain-bla-bla');
+    webrtc.on('createdPeer', (rawPeer: any) => {
+      rawPeer.on('channelOpen', () => {
+        console.log('data channel open')
+      });
+      rawPeer.getDataChannel('label');
+      console.log('Peer connected', rawPeer.id);
+      rawPeer.pc.on('iceConnectionStateChange', () => {
+        const state = rawPeer.pc.iceConnectionState;
+        if (state === 'closed') {
+          delete this.peers[rawPeer.id];
+        }
+      });
+      const abstractedPeer = {
+        send: (message: any) => {
+          rawPeer.sendDirectly.apply(rawPeer, ['label', message]);
+        },
+        on: rawPeer.on.bind(rawPeer),
+        off: rawPeer.off.bind(rawPeer)
+      };
 
+      const peer = new Peer(abstractedPeer);
+
+      this.peers[rawPeer.id] = peer;
+      peer.listen(app);
+    });
+
+    const roomName = 'my-block-chain-15';
     webrtc.on('connectionReady', () => {
       console.log('SimpleWebRTC Ready');
-      webrtc.joinRoom('my-block-chain');
-      webrtc.on('createdPeer', (rawPeer: any) => {
-        console.log('Peer connected', rawPeer.id);
-        const abstractedPeer = {
-          send: (message: any) => {
-            rawPeer.sendDirectly.apply(rawPeer, ['label', message]);
-          },
-          on: rawPeer.on.bind(rawPeer),
-          off: rawPeer.off.bind(rawPeer)
-        };
-
-        const peer = new Peer(abstractedPeer);
-
-        this.peers[rawPeer.id] = peer;
-        peer.listen(app);
+      webrtc.joinRoom(roomName, (err: any, res: any) => {
+        console.log('joinRoom', err, res);
       });
+
     });
   }
 }

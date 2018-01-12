@@ -22,7 +22,7 @@ export class Response {
       return;
     }
     this.ended = true;
-    this.request.respond(this.data, this.statusCode);
-    
+    this.request.respond(this.data, this.statusCode || 200);
+
   }
 }
