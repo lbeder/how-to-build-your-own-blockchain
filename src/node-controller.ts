@@ -15,9 +15,14 @@ export class NodeController {
     this.peers = peers;
     this.miningHandle = null;
     this.runningConsensus = Promise.resolve();
+    this.startMining();
+    this.consensus()
+      .catch(err => {
+        console.error('Initial consensus failed', err);
+      });
   }
 
-  private mineBlock() {
+  private startMining() {
     if (this.miningHandle) {
       const isTheSameTransactionsCount = this.miningHandle.transactionsCount === this.blockchain.transactionPool.length + 1;
       const didChainChange = this.miningHandle.lastBlock !== this.blockchain.getLastBlock().blockNumber;
@@ -48,12 +53,12 @@ export class NodeController {
           // notify everyone about the new block
           this.miningHandle = null;
           this.notifyAll('/new-block');
-          this.mineBlock();
+          this.startMining();
         },
         err => {
           console.error('mining error', err);
           this.miningHandle = null;
-          this.mineBlock();
+          this.startMining();
         })
   }
 
@@ -67,6 +72,7 @@ export class NodeController {
     const success = this.blockchain.consensus(dehydratedBlockchains);
 
     if (!success) throw new Error("Can't reach a consensus");
+    this.startMining();
   }
 
   public getAllBlocks() {
@@ -89,7 +95,7 @@ export class NodeController {
   public submitTransaction(senderAddress: string, recipientAddress: string, value: number) {
     if (!senderAddress || !recipientAddress || !value) throw new Error("Invalid parameters!");
     this.blockchain.submitTransaction(senderAddress, recipientAddress, value);
-    this.mineBlock();
+    this.startMining();
   }
 
   public handleNewBlockNotifications() {
@@ -97,7 +103,7 @@ export class NodeController {
     this.runningConsensus = this.runningConsensus.then(async () => {
       try {
         await this.consensus();
-        await this.mineBlock();
+        this.startMining();
       }
       catch (err) {
         console.warn('Consensus failed', err);
