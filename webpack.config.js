@@ -1,22 +1,35 @@
-const path = require('path');
+const {resolve, join} = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ExtractTextPlugin = require('extract-text-webpack-plugin');
 const CleanWebpackPlugin = require('clean-webpack-plugin');
+const autoprefixer = require('autoprefixer');
 
 const extractPlugin = new ExtractTextPlugin({filename: './app.css'});
 
 const config = {
-  context: path.resolve(__dirname, 'src'),
+  context: resolve(__dirname, 'src'),
   devtool: 'source-map',
   entry: {
-    app: ['./app.ts', './app.css']
+    app: ['./app.ts'],
+    vendor: [
+      'preact',
+      'preact-compat',
+      'material-ui',
+      'mobx',
+      'mobx-preact'
+    ]
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'app.js'
+    path: resolve(__dirname, 'dist'),
+    filename: '[name].[hash].js',
+    chunkFilename: '[name].[hash].js'
   },
   resolve: {
-    extensions: ['.ts', '.tsx', '.js']
+    extensions: ['.ts', '.tsx', '.js'],
+    alias: {
+      react: 'preact-compat',
+      'react-dom': 'preact-compat'
+    }
   },
   module: {
     rules: [
@@ -24,10 +37,30 @@ const config = {
         test: /\.tsx?$/, loader: 'ts-loader'
       },
       {
-        test: /\.css$/,
+        test: /\.(css|styl)$/,
         use: extractPlugin.extract({
           use: [
-            'css-loader'
+            {
+              loader: 'css-loader'
+            }, {
+              loader: 'postcss-loader',
+              options: {
+                modules: true,
+                sourceMap: true,
+                plugins: [
+                  autoprefixer({
+                    browsers: ['last 3 version']
+                  })
+                ]
+              }
+            }, {
+              loader: 'stylus-loader',
+              options: {
+                includePaths: [
+                  join(__dirname, 'src')
+                ]
+              }
+            }
           ],
           fallback: 'style-loader'
         })
@@ -64,7 +97,7 @@ const config = {
     new CleanWebpackPlugin(['dist'])
   ],
   devServer: {
-    contentBase: path.resolve(__dirname, './dist/assets/media'),
+    contentBase: resolve(__dirname, './dist/assets/media'),
     compress: true,
     port: 12000,
     stats: 'errors-only',

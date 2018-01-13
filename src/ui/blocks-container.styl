@@ -1,0 +1,89 @@
+:local(.className)
+  border-right: 1px solid rgba(128, 128, 128, 0.12);
+  min-width: 270px;
+
+  &-blocks
+    padding: 10px;
+    overflow-y: auto;
+    max-height: calc(100% - 56px);
+
+  &-block
+    position: relative;
+    font-size: 13px;
+    border: 2px solid #008000;
+    padding: 12px 4px 8px;
+    margin-bottom: 10px;
+
+    &:last-child
+      & ^[-1]-arrow
+        display none
+
+    & > *
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      margin-bottom: 3px;
+      justify-content: flex-start;
+
+    & .material-icons
+      font-size 14px !important
+      width: 16px;
+
+    &-hash
+      max-width: 75%;
+
+      & > span
+        display block
+        width 100%
+        overflow-x hidden
+        text-overflow ellipsis
+        color #1B5E20
+
+    &-number
+      position: absolute !important;
+      right: 4px;
+      top: 5px;
+
+    &-time
+      font-size: 11px;
+
+    &-previous
+      & > span
+        display block
+        width 100%
+        overflow-x hidden
+        text-overflow ellipsis
+
+    &-arrow
+      position: absolute;
+      bottom: -14px;
+      left: 0;
+      right: 0;
+      margin: auto;
+      width: 14px;
+      transform: rotate(90deg);
+
+    &-transactions
+      flex-wrap wrap
+
+      &-list
+        width: 100%;
+        margin-top: 6px;
+
+    &-pending-title
+      font-size 22px
+      justify-content center
+      font-weight: bold;
+      color: #d2d2d2;
+      text-shadow: 1px 1px 1px #ff970173;
+
+  &-block&-pending
+    border: 2px solid #FF9800;
+
+  &-transaction
+    font-size: 10px;
+    margin-left: 15px;
+    display: flex;
+    align-items center
+    color: #283593
+

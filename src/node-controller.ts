@@ -49,11 +49,20 @@ export class NodeController extends EventEmitter {
     }
 
     this.miningHandle = this.blockchain.mineBlock();
+    this.miningHandle.progressEmitter.on('progress', ({pendingBlock}) => {
+      this.emit('liveState', {
+        pendingBlock: deserialize(Block, serialize(pendingBlock))
+      });
+    });
     this.miningHandle.newBlockPromise
       .then(
-        () => {
+        newBlock => {
           // notify everyone about the new block
           this.miningHandle = null;
+          this.emit('newBlock');
+          this.emit('activity', {
+            msg: `Mined new block ${newBlock.blockNumber} - ${newBlock.sha256().slice(0, 10)}`
+          });
           this.notifyAll('/new-block');
           this.startMining({internal: true});
         },
@@ -93,6 +102,8 @@ export class NodeController extends EventEmitter {
   public init({miningAddress = '', autoMining = true, autoConsensus = true} = {miningAddress: ''}) {
     if (!miningAddress) throw new Error('Must provide mining address');
 
+    this.emit('activity', {msg: `Initialize Blockchain`});
+
     this.config = {autoMining, autoConsensus};
     this.blockchain = new Blockchain(miningAddress);
 
@@ -101,6 +112,10 @@ export class NodeController extends EventEmitter {
       .catch(err => {
         console.error('Initial consensus failed', err);
       });
+    this.emit('liveState', {
+      statue: 'running'
+    });
+    this.emit('init');
   }
 
   public async consensus({internal} = {internal: false}) {
@@ -165,6 +180,10 @@ export class NodeController extends EventEmitter {
       try {
         await this.consensus({internal: true});
         this.startMining({internal: true});
+        this.emit('activity', {
+          msg: `Peer reported new block`
+        });
+        this.emit('newBlock');
       }
       catch (err) {
         console.warn('Consensus failed', err);

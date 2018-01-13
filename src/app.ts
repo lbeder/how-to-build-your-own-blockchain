@@ -5,6 +5,8 @@ import {NodeController} from './node-controller';
 import {Wallet} from './wallet';
 import {Crypto} from "./crypto";
 
+const main = require('./ui/main');
+
 async function init() {
   let controller: NodeController;
   const onNewPeer = () => {
@@ -25,17 +27,14 @@ async function init() {
   (<any>window).wallet = myWallet;
   (<any>window).mycrypt = new Crypto();
 
-// require.ensure([], function (require: (module: string) => any) {
-//   const main = require('./ui/main');
-//   main.renderApp(controller);
-// }, 'ui');
+  main.renderApp(controller, myWallet);
 
   controller.init({
     miningAddress: myWallet.myAddress,
     autoMining: true,
     autoConsensus: true
   });
-
 }
 
-init();
+init()
+  .catch(err => console.error(err));

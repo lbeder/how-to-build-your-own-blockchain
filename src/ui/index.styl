@@ -1,0 +1,26 @@
+#app
+  height: 100vh;
+  width: 100vw;
+
+body
+  margin 0
+  font-family: Roboto, sans-serif;
+
+*, *:after, *:before
+  box-sizing border-box
+
+:local(.className)
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+
+  &-wrapper
+    flex: 1 1 1px;
+    display flex
+    flex-wrap: wrap;
+
+    & > *
+      flex: 1 1 30%; // this just needs to be less than 1/3
+      height: 100%;

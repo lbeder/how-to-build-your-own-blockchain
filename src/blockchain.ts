@@ -1,4 +1,5 @@
 import {Block} from "./block";
+import {EventEmitter} from "Eventemitter3";
 import {Transaction} from "./transaction";
 import BigNumber from "bignumber.js";
 import deepEqual = require("deep-equal");
@@ -9,14 +10,15 @@ export interface MiningHandle {
 
   newBlockPromise: Promise<Block>
   transactionsCount: number
-  lastBlock: number
+  lastBlock: number,
+  progressEmitter: EventEmitter
 }
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
-  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
+  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "GENESIS");
 
-  public static readonly DIFFICULTY = 10;
+  public static readonly DIFFICULTY = 11;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
   public static readonly MINING_SENDER = "<COINBASE>";
@@ -159,6 +161,7 @@ export class Blockchain {
     const miningPromise = new Promise<Block>(resolver => {
       resolve = resolver;
     });
+    const progressEmitter = new EventEmitter();
 
     // removing non verified transactions from transactionPool
     const relevantTransactions = this.transactionPool.filter(this.verifyTransaction, this);
@@ -181,11 +184,18 @@ export class Blockchain {
 
     let interval: NodeJS.Timer;
     const stop = () => {
+      progressEmitter.removeAllListeners();
       clearInterval(interval);
     };
     interval = setInterval(() => {
       const pow = newBlock.sha256();
       // console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
+
+      if (!(newBlock.nonce % 21)) {
+        progressEmitter.emit('progress', {
+          pendingBlock: newBlock
+        });
+      }
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW for block ${newBlock.blockNumber}: ${pow}!`);
@@ -206,7 +216,8 @@ export class Blockchain {
       stop,
       newBlockPromise: miningPromise,
       transactionsCount: relevantTransactions.length,
-      lastBlock: lastBlock.blockNumber
+      lastBlock: lastBlock.blockNumber,
+      progressEmitter
     };
   }
 
