@@ -1,5 +1,6 @@
-import {serialize} from "serializer.ts/Serializer";
+import {deserialize, serialize} from "serializer.ts/Serializer";
 import {NodeController} from './node-controller';
+import {Transaction} from "./transaction";
 
 export function routes(app: any, controller: NodeController) {
   // Show all the blocks.
@@ -18,15 +19,13 @@ export function routes(app: any, controller: NodeController) {
   });
 
   app.post("/transactions", (req: any, res: any) => {
-    const senderAddress = req.body.senderAddress;
-    const recipientAddress = req.body.recipientAddress;
-    const value = Number(req.body.value);
+    const transaction = deserialize<Transaction>(Transaction,req.body);
 
-    controller.submitTransaction(senderAddress, recipientAddress, value);
+    controller.submitTransaction(transaction);
 
     res.json({
       success: true,
-      msg: `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`
+      msg: `Transaction ${serialize(transaction)} was added successfully`
     });
   });
 

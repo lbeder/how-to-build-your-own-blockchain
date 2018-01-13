@@ -1,4 +1,4 @@
-import {deserialize} from "serializer.ts/Serializer";
+import {deserialize, serialize} from "serializer.ts/Serializer";
 import {EventEmitter} from 'Eventemitter3';
 import {Blockchain, MiningHandle} from './blockchain';
 import {Block} from './block';
@@ -144,14 +144,19 @@ export class NodeController extends EventEmitter {
     return this.blockchain.transactionPool.slice();
   }
 
-  public submitTransaction(senderAddress: string, recipientAddress: string, value: number) {
+  public submitTransaction(transaction: Transaction){
+    this.blockchain.submitTransaction(transaction);
+    this.emit('activity', {msg: `Transaction submitted ${serialize(transaction)}`});
+    this.startMining({internal: true});
+  }
+
+  public createTransaction(senderAddress: string, recipientAddress: string, value: number) {
     if (!this.blockchain) throw new Error('Block chain is not initialized');
     if (!senderAddress || !recipientAddress || !value) throw new Error("Invalid parameters!");
-    this.blockchain.submitTransaction(senderAddress, recipientAddress, value);
+    const transaction = new Transaction(senderAddress, recipientAddress, value);
+    this.submitTransaction(transaction);
 
-    this.emit('activity', {msg: `Transaction submitted ${senderAddress} -> recipientAddress (${value}WC)`});
-    this.notifyAll('/transactions', {senderAddress, recipientAddress, value});
-    this.startMining({internal: true});
+    this.notifyAll('/transactions', serialize(transaction));
   }
 
   public handleNewBlockNotifications() {

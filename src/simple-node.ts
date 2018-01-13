@@ -60,7 +60,7 @@ export class SimpleNode {
       peer.listen(app);
     });
 
-    const roomName = 'my-block-chain-15';
+    const roomName = 'my-block-chain-16';
     webrtc.on('connectionReady', () => {
       console.log('SimpleWebRTC Ready');
       webrtc.joinRoom(roomName, (err: any, res: any) => {

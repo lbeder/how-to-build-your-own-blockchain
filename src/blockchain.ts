@@ -164,6 +164,7 @@ export class Blockchain {
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW for block ${newBlock.blockNumber}: ${pow}!`);
+        newBlock.transactions.forEach((transaction)=>{console.log('with transaction:',transaction);});
 
         this.handleNewBlock(newBlock, relevantTransactions.length);
         stop();
@@ -183,9 +184,9 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: string, recipientAddress: string, value: number) {
+  public submitTransaction(transaction: Transaction) {
     // TODO: if the sender address already exists in the pool reject the transaction
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+    this.transactionPool.push(transaction);
   }
 
   public getLastBlock(): Block {
