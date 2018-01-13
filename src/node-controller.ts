@@ -1,28 +1,30 @@
 import {deserialize} from "serializer.ts/Serializer";
+import {EventEmitter} from 'Eventemitter3';
 import {Blockchain, MiningHandle} from './blockchain';
 import {Block} from './block';
 import {Transaction} from './transaction';
 import {Peer} from './Peer';
 
-export class NodeController {
+export class NodeController extends EventEmitter {
   private blockchain: Blockchain;
   private peers: { [peerId: string]: Peer };
   private miningHandle: MiningHandle;
   private runningConsensus: Promise<void>;
+  private config: {
+    autoMining: boolean,
+    autoConsensus: boolean
+  };
 
-  constructor(blockchain: Blockchain, peers: { [peerId: string]: Peer }) {
-    this.blockchain = blockchain;
+  constructor(peers: { [peerId: string]: Peer }) {
+    super();
     this.peers = peers;
     this.miningHandle = null;
     this.runningConsensus = Promise.resolve();
-    this.startMining();
-    this.consensus()
-      .catch(err => {
-        console.error('Initial consensus failed', err);
-      });
   }
 
-  private startMining() {
+  private startMining({internal} = {internal: false}) {
+    if (internal && !this.config.autoMining) return;
+
     if (this.miningHandle) {
       const isTheSameTransactionsCount = this.miningHandle.transactionsCount === this.blockchain.transactionPool.length + 1;
       const didChainChange = this.miningHandle.lastBlock !== this.blockchain.getLastBlock().blockNumber;
@@ -53,27 +55,58 @@ export class NodeController {
           // notify everyone about the new block
           this.miningHandle = null;
           this.notifyAll('/new-block');
-          this.startMining();
+          this.startMining({internal: true});
         },
         err => {
           console.error('mining error', err);
           this.miningHandle = null;
-          this.startMining();
-        })
+          this.startMining({internal: true});
+        });
+
+    this.emit('liveState', {
+      isMining: true
+    });
   }
 
-  private notifyAll(route: string) {
+  stopMining() {
+    if (this.miningHandle) {
+      this.miningHandle.stop();
+      this.miningHandle = null;
+    }
+    this.emit('liveState', {
+      isMining: false
+    });
+  }
+
+  private notifyAll(route: string, payload: any = null) {
+    this.emit('activity', {msg: `Notifying all peers ${route}`});
     Promise.all(
       Object.values(this.peers)
-        .map(node => node.fetch(route, null, 'post'))
+        .map(node => node.fetch(route, payload, 'post'))
     )
       .catch(err => {
         console.log('Some notifications failed', err);
-      })
+      });
   };
 
-  public async consensus() {
-    if (!Object.keys(this.peers).length) return;
+
+  public init({miningAddress = '', autoMining = true, autoConsensus = true} = {miningAddress: ''}) {
+    if (!miningAddress) throw new Error('Must provide mining address');
+
+    this.config = {autoMining, autoConsensus};
+    this.blockchain = new Blockchain(miningAddress);
+
+    this.startMining({internal: true});
+    this.consensus({internal: true})
+      .catch(err => {
+        console.error('Initial consensus failed', err);
+      });
+  }
+
+  public async consensus({internal} = {internal: false}) {
+    if (internal && !this.config.autoConsensus) return;
+
+    if (!Object.keys(this.peers).length || !this.blockchain) return;
 
     const blockchainsResults = await Promise.all(Object.values(this.peers).map(node => node.fetch('/blocks')));
 
@@ -82,15 +115,18 @@ export class NodeController {
 
     if (success) {
       console.log(`Reached consensus from ${blockchainsResults.length} nodes`);
+      this.emit('activity', {msg: `Reached consensus from ${blockchainsResults.length} nodes`});
     }
     else {
       console.log(`Can't reach a consensus ${blockchainsResults.length}`);
+      this.emit('activity', {msg: `Can't reach a consensus ${blockchainsResults.length}`});
     }
 
-    this.startMining();
+    this.startMining({internal: true});
   }
 
   public getAllBlocks() {
+    if (!this.blockchain) return [];
     return this.blockchain.blocks;
   }
 
@@ -98,27 +134,32 @@ export class NodeController {
     const id = Number(blockId);
     if (isNaN(id)) throw new Error('Invalid Block Id');
 
-    if (id >= this.blockchain.blocks.length) throw new Error(`Block #${id} wasn't found`);
+    if (!this.blockchain || id >= this.blockchain.blocks.length) throw new Error(`Block #${id} wasn't found`);
 
     return this.blockchain.blocks[id];
   }
 
   public getTransactions(): Array<Transaction> {
+    if (!this.blockchain) return [];
     return this.blockchain.transactionPool.slice();
   }
 
   public submitTransaction(senderAddress: string, recipientAddress: string, value: number) {
+    if (!this.blockchain) throw new Error('Block chain is not initialized');
     if (!senderAddress || !recipientAddress || !value) throw new Error("Invalid parameters!");
     this.blockchain.submitTransaction(senderAddress, recipientAddress, value);
-    this.startMining();
+
+    this.emit('activity', {msg: `Transaction submitted ${senderAddress} -> recipientAddress (${value}WC)`});
+    this.notifyAll('/transactions', {senderAddress, recipientAddress, value});
+    this.startMining({internal: true});
   }
 
   public handleNewBlockNotifications() {
     // chain consensus calls so we don't miss any but still only run one in parallel
     this.runningConsensus = this.runningConsensus.then(async () => {
       try {
-        await this.consensus();
-        this.startMining();
+        await this.consensus({internal: true});
+        this.startMining({internal: true});
       }
       catch (err) {
         console.warn('Consensus failed', err);
