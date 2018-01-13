@@ -86,7 +86,7 @@ export class Blockchain {
 
   private handleNewBlock(newBlock: Block, acceptedTransactionsCount: number) {
     this.blocks.push(newBlock);
-    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount,-1);
+    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount, -1);
   }
 
   public consensus(blockchains: Array<Array<Block>>): boolean {
@@ -162,7 +162,7 @@ export class Blockchain {
     this.transactionPool = relevantTransactions;
 
     const transactions = [
-      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
+      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, new Uint8Array([])),
       ...this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE - 1)
     ];
 

@@ -144,19 +144,21 @@ export class NodeController extends EventEmitter {
     return this.blockchain.transactionPool.slice();
   }
 
-  public submitTransaction(transaction: Transaction){
+  public submitTransaction(transaction: Transaction) {
     this.blockchain.submitTransaction(transaction);
     this.emit('activity', {msg: `Transaction submitted ${serialize(transaction)}`});
     this.startMining({internal: true});
   }
 
-  public createTransaction(senderAddress: string, recipientAddress: string, value: number) {
+  public createTransaction(transaction: Transaction) {
     if (!this.blockchain) throw new Error('Block chain is not initialized');
-    if (!senderAddress || !recipientAddress || !value) throw new Error("Invalid parameters!");
-    const transaction = new Transaction(senderAddress, recipientAddress, value);
     this.submitTransaction(transaction);
 
-    this.notifyAll('/transactions', serialize(transaction));
+
+    const serializedTransaction = Transaction.serialize(transaction);
+    const transferredTransaction = Transaction.deserialize(serializedTransaction);
+    console.log(transferredTransaction,transferredTransaction.verify());
+    this.notifyAll('/transactions', serializedTransaction);
   }
 
   public handleNewBlockNotifications() {
