@@ -20,7 +20,7 @@ export class Blockchain {
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
   public static readonly MINING_SENDER = "<COINBASE>";
-  public static readonly MINING_REWARD = 50;
+  public static readonly MINING_REWARD = 500;
   public static readonly MAX_BLOCK_SIZE = 10;
 
   public nodeId: string;
@@ -86,7 +86,7 @@ export class Blockchain {
 
   private handleNewBlock(newBlock: Block, acceptedTransactionsCount: number) {
     this.blocks.push(newBlock);
-    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount);
+    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount,-1);
   }
 
   public consensus(blockchains: Array<Array<Block>>): boolean {
@@ -131,6 +131,25 @@ export class Blockchain {
     }
   }
 
+  public verifyTransaction(currTransaction: Transaction) {
+    // verifying sender's balance
+    let senderBalance = 0;
+    this.blocks.forEach(block => {
+      block.transactions.forEach(transaction => {
+        // reduce from balance
+        if (transaction.senderAddress === currTransaction.senderAddress) {
+          senderBalance -= transaction.value;
+        }
+
+        // add to balance
+        if (transaction.recipientAddress === currTransaction.senderAddress) {
+          senderBalance += transaction.value;
+        }
+      });
+    });
+    return senderBalance >= currTransaction.value;
+  }
+
   // Mines for block.
   public mineBlock(): MiningHandle {
     let resolve: any;
@@ -138,13 +157,16 @@ export class Blockchain {
       resolve = resolver;
     });
 
-    const relevantTransactions = this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE);
+    // removing non verified transactions from transactionPool
+    const relevantTransactions = this.transactionPool.filter(this.verifyTransaction, this);
+    this.transactionPool = relevantTransactions;
 
-    // Create a new block which will "point" to the last block.
     const transactions = [
       new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
-      ...relevantTransactions
+      ...this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE - 1)
     ];
+
+    // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
     const newBlock = new Block(
       lastBlock.blockNumber + 1,
@@ -164,9 +186,11 @@ export class Blockchain {
 
       if (Blockchain.isPoWValid(pow)) {
         console.log(`Found valid POW for block ${newBlock.blockNumber}: ${pow}!`);
-        newBlock.transactions.forEach((transaction)=>{console.log('with transaction:',transaction);});
+        newBlock.transactions.forEach((transaction) => {
+          console.log('with transaction:', transaction);
+        });
 
-        this.handleNewBlock(newBlock, relevantTransactions.length);
+        this.handleNewBlock(newBlock, newBlock.transactions.length);
         stop();
         resolve(newBlock);
         return;
