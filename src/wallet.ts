@@ -17,9 +17,10 @@ export class Wallet {
   }
 
   async createSignedTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    const buffer = this.createArrayBufferFromData(senderAddress, recipientAddress, value);
+    const timestamp = Date.now().toString();
+    const buffer = this.createArrayBufferFromData(senderAddress, recipientAddress, value, timestamp);
     const signature = await this.cryptoInstance.sign(buffer);
-    const transaction = new Transaction(senderAddress, recipientAddress, value, new Uint8Array(signature));
+    const transaction = new Transaction(senderAddress, recipientAddress, value, new Uint8Array(signature), timestamp);
     if (!transaction.verify()) {
       throw new Error('created an invalid transaction');
     }
@@ -27,10 +28,10 @@ export class Wallet {
     return transaction;
   }
 
-  private createArrayBufferFromData(senderAddress: Address, recipientAddress: Address, value: number) {
+  private createArrayBufferFromData(senderAddress: Address, recipientAddress: Address, value: number, timestamp: string) {
     const leftPad = '0000000000000000';
     const stringValue = (leftPad + Number(value).toString(2)).substr(-16);
-    const transactionString = senderAddress + recipientAddress + stringValue;
+    const transactionString = senderAddress + recipientAddress + stringValue + timestamp;
     return new (<any>window).TextEncoder().encode(transactionString);
   }
 

@@ -156,8 +156,6 @@ export class NodeController extends EventEmitter {
 
 
     const serializedTransaction = Transaction.serialize(transaction);
-    const transferredTransaction = Transaction.deserialize(serializedTransaction);
-    console.log(transferredTransaction,transferredTransaction.verify());
     this.notifyAll('/transactions', serializedTransaction);
   }
 

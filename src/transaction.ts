@@ -1,5 +1,6 @@
 import {Crypto} from "./crypto";
 import {deserialize, serialize} from "serializer.ts/Serializer";
+
 export type Address = string;
 
 export class Transaction {
@@ -7,12 +8,14 @@ export class Transaction {
   public recipientAddress: Address;
   public value: number;
   public signature: Uint8Array;
+  public timestamp: string;
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number, signature: Uint8Array) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number, signature: Uint8Array, timestamp: string) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
     this.signature = signature;
+    this.timestamp = timestamp;
     this.validate(senderAddress, recipientAddress);
     // TODO: implement signature and verification
   }

@@ -136,6 +136,9 @@ export class Blockchain {
     let senderBalance = 0;
     this.blocks.forEach(block => {
       block.transactions.forEach(transaction => {
+        if(currTransaction.signature == transaction.signature){
+          return false;
+        }
         // reduce from balance
         if (transaction.senderAddress === currTransaction.senderAddress) {
           senderBalance -= transaction.value;
@@ -162,7 +165,7 @@ export class Blockchain {
     this.transactionPool = relevantTransactions;
 
     const transactions = [
-      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, new Uint8Array([])),
+      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, new Uint8Array([]), Date.now().toString()),
       ...this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE - 1)
     ];
 
