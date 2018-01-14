@@ -169,9 +169,7 @@ export class NodeController extends EventEmitter {
     if (!this.blockchain) throw new Error('Block chain is not initialized');
     this.submitTransaction(transaction);
 
-
-    const serializedTransaction = Transaction.serialize(transaction);
-    this.notifyAll('/transactions', serializedTransaction);
+    this.notifyAll('/transactions', serialize(transaction));
   }
 
   public handleNewBlockNotifications() {

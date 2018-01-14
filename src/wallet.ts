@@ -18,22 +18,14 @@ export class Wallet {
 
   async createSignedTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
     const timestamp = Date.now().toString();
-    const buffer = this.createArrayBufferFromData(senderAddress, recipientAddress, value, timestamp);
+    const buffer = Transaction.createArrayBufferFromData(senderAddress, recipientAddress, value, timestamp);
     const signature = await this.cryptoInstance.sign(buffer);
-    const transaction = new Transaction(senderAddress, recipientAddress, value, new Uint8Array(signature), timestamp);
+    const stringSignature = btoa(new Uint8Array(signature) as any);
+    const transaction = new Transaction(senderAddress, recipientAddress, value, stringSignature, timestamp);
     if (!transaction.verify()) {
       throw new Error('created an invalid transaction');
     }
     this.myController.createTransaction(transaction);
     return transaction;
   }
-
-  private createArrayBufferFromData(senderAddress: Address, recipientAddress: Address, value: number, timestamp: string) {
-    const leftPad = '0000000000000000';
-    const stringValue = (leftPad + Number(value).toString(2)).substr(-16);
-    const transactionString = senderAddress + recipientAddress + stringValue + timestamp;
-    return new (<any>window).TextEncoder().encode(transactionString);
-  }
-
-
 }

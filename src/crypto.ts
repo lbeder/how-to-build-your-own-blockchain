@@ -35,7 +35,6 @@ export class Crypto {
       this.privateKey,
       buffer
     );
-    console.log(new Uint8Array(signature));
     return signature;
   }
 

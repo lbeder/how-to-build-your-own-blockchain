@@ -7,54 +7,37 @@ export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
   public value: number;
-  public signature: Uint8Array;
+  public signature: string;
   public timestamp: string;
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number, signature: Uint8Array, timestamp: string) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number, signature: string, timestamp: string) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
     this.signature = signature;
     this.timestamp = timestamp;
-    this.validate(senderAddress, recipientAddress);
-    // TODO: implement signature and verification
-  }
-
-  private validate(senderAddress: Address, recipientAddress: Address) {
-    // if (senderAddress.length !== 86 || recipientAddress.length !== 86) {
-    //   throw new Error("invalid sender or receiver addresses");
-    // }
   }
 
   public async verify() {
     try {
-      const buffer = this.createArrayBufferFromData(this.senderAddress, this.recipientAddress, this.value);
+      const buffer = Transaction.createArrayBufferFromData(this.senderAddress, this.recipientAddress, this.value, this.timestamp);
+      const binarySignature = new Uint8Array((atob(this.signature).split(',')) as any);
       const crypto = new Crypto();
-      const isValid = await crypto.verify(this.senderAddress, buffer, this.signature);
+      const isValid = await crypto.verify(this.senderAddress, buffer, binarySignature);
       return isValid;
     } catch (e) {
       debugger;
     }
   }
 
-  private createArrayBufferFromData(senderAddress: Address, recipientAddress: Address, value: number) {
+  public isEqual(transaction: Transaction) {
+    return this.signature === transaction.signature;
+  }
+
+  public static createArrayBufferFromData(senderAddress: Address, recipientAddress: Address, value: number, timestamp:string) {
     const leftPad = '0000000000000000';
     const stringValue = (leftPad + Number(value).toString(2)).substr(-16);
-    const transactionString = senderAddress + recipientAddress + stringValue;
+    const transactionString = senderAddress + recipientAddress + stringValue + timestamp;
     return new (<any>window).TextEncoder().encode(transactionString);
-  }
-
-  public static serialize(transaction: Transaction) {
-    const serialized = serialize(transaction);
-    serialized.signature = btoa(serialized.signature);
-    return serialized;
-  }
-
-  public static deserialize(serialized: any) {
-    const transaction = deserialize<Transaction>(Transaction, serialized);
-    const stringSignature = transaction.signature as any;
-    const stringArrayBuffer = (atob(stringSignature).split(',')) as any;
-    transaction.signature = new Uint8Array(stringArrayBuffer);
-    return transaction
   }
 }
