@@ -22,9 +22,8 @@ export class NodeController extends EventEmitter {
     this.runningConsensus = Promise.resolve();
   }
 
-  private startMining({internal} = {internal: false}) {
-    if (internal && !this.config.autoMining) return;
-
+  private startMining(force?:boolean) {
+    if (!force && !this.config.autoMining) return;
     if (this.miningHandle) {
       const isTheSameTransactionsCount = this.miningHandle.transactionsCount === this.blockchain.transactionPool.length + 1;
       const didChainChange = this.miningHandle.lastBlock !== this.blockchain.getLastBlock().blockNumber;
@@ -59,17 +58,20 @@ export class NodeController extends EventEmitter {
         newBlock => {
           // notify everyone about the new block
           this.miningHandle = null;
+          this.emit('liveState', {
+            pendingBlock: null
+          });
           this.emit('newBlock');
           this.emit('activity', {
             msg: `Mined new block ${newBlock.blockNumber} - ${newBlock.sha256().slice(0, 10)}`
           });
           this.notifyAll('/new-block');
-          this.startMining({internal: true});
+          this.startMining();
         },
         err => {
           console.error('mining error', err);
           this.miningHandle = null;
-          this.startMining({internal: true});
+          this.startMining();
         });
 
     this.emit('liveState', {
@@ -107,8 +109,8 @@ export class NodeController extends EventEmitter {
     this.config = {autoMining, autoConsensus};
     this.blockchain = new Blockchain(miningAddress);
 
-    this.startMining({internal: true});
-    this.consensus({internal: true})
+    this.startMining();
+    this.consensus()
       .catch(err => {
         console.error('Initial consensus failed', err);
       });
@@ -118,8 +120,8 @@ export class NodeController extends EventEmitter {
     this.emit('init');
   }
 
-  public async consensus({internal} = {internal: false}) {
-    if (internal && !this.config.autoConsensus) return;
+  public async consensus(force?:boolean) {
+    if (!force && !this.config.autoConsensus) return;
 
     if (!Object.keys(this.peers).length || !this.blockchain) return;
 
@@ -137,7 +139,7 @@ export class NodeController extends EventEmitter {
       this.emit('activity', {msg: `Can't reach a consensus ${blockchainsResults.length}`});
     }
 
-    this.startMining({internal: true});
+    this.startMining();
   }
 
   public getAllBlocks() {
@@ -162,7 +164,7 @@ export class NodeController extends EventEmitter {
   public submitTransaction(transaction: Transaction) {
     this.blockchain.submitTransaction(transaction);
     this.emit('activity', {msg: `Transaction submitted ${serialize(transaction)}`});
-    this.startMining({internal: true});
+    this.startMining();
   }
 
   public createTransaction(transaction: Transaction) {
@@ -176,8 +178,8 @@ export class NodeController extends EventEmitter {
     // chain consensus calls so we don't miss any but still only run one in parallel
     this.runningConsensus = this.runningConsensus.then(async () => {
       try {
-        await this.consensus({internal: true});
-        this.startMining({internal: true});
+        await this.consensus();
+        this.startMining();
         this.emit('activity', {
           msg: `Peer reported new block`
         });
