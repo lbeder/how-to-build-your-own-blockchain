@@ -96,6 +96,7 @@ export class Blockchain {
   private storagePath: string;
 
   private publicKey: any;
+  public active = true; // allow adding new transactions to the blockchain
 
   constructor(nodeId: string, votingOptions: string, publicKeyFile:string) {
     //Set the genesis block to hold the available votion options
@@ -265,9 +266,12 @@ export class Blockchain {
     return newBlock;
   }
 
-  // Submits new transaction
+  // Submits new transaction if the blockchain is enabled
   public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number, type: string, vote: string, isEncrypted:boolean) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, type, vote, isEncrypted));
+    if (blockchain.active) 
+      this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, type, vote, isEncrypted));
+    else 
+      console.log('Can\'t add more transaction to the blockchain. Blockchain is not active');
   }
 
   // Creates new block on the blockchain.
