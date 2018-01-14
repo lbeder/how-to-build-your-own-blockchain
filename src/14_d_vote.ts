@@ -16,21 +16,30 @@ import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
 import { request } from "https";
 
+import  * as NodeRSA from "node-rsa"
+
 export type Address = string;
 
 export class Transaction {
   public senderAddress: Address;
-  public recipientAddress: Address;
-  public value: number;
   public transactionType: string;
-  public vote: string
+  public transactionContent: any;
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number,transactionType: string, vote: string ) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number,transactionType: string, vote: string, isEncrypted:boolean ) {
     this.senderAddress = senderAddress;
-    this.recipientAddress = recipientAddress;
-    this.value = value;
-    this.transactionType = transactionType;
-    this.vote = vote; 
+    this.transactionType = transactionType
+    var content = {
+      recipientAddress : recipientAddress,
+      value : value,
+      vote : vote
+    };
+    if (isEncrypted) {
+      //encrypt the transaction content
+      this.transactionContent = blockchain.getPublicKey().encrypt(content,'hex');
+    } else {
+      this.transactionContent = content;
+    }
+
   }
 }
 
@@ -86,7 +95,9 @@ export class Blockchain {
   public transactionPool: Array<Transaction>;
   private storagePath: string;
 
-  constructor(nodeId: string, votingOptions: string) {
+  private publicKey: any;
+
+  constructor(nodeId: string, votingOptions: string, publicKeyFile:string) {
     //Set the genesis block to hold the available votion options
     Blockchain.GENESIS_BLOCK = new Block(0, [], 0, 0,votingOptions);
 
@@ -95,9 +106,14 @@ export class Blockchain {
     this.transactionPool = [];
 
     this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
-
+    this.publicKey = new NodeRSA(this.loadPublicKey(publicKeyFile));
+    
     // Load the blockchain from the storage.
     this.load();
+  }
+
+  public getPublicKey() {
+    return this.publicKey;
   }
 
   // Registers new node.
@@ -108,6 +124,12 @@ export class Blockchain {
   // Saves the blockchain to the disk.
   private save() {
     fs.writeFileSync(this.storagePath, JSON.stringify(serialize(this.blocks), undefined, 2), "utf8");
+  }
+
+  //load the public key used by voter to encrypt their votes
+  private loadPublicKey(filename: string) {
+    var file_path= path.resolve(__dirname,'../',filename);
+    return fs.readFileSync(file_path, "utf8");
   }
 
   // Loads the blockchain from the disk.
@@ -244,14 +266,14 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number, type: string, vote: string) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, type, vote));
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number, type: string, vote: string, isEncrypted:boolean) {
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, type, vote, isEncrypted));
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
     // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, "REWARD", ""),
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, "REWARD", "", false),
       ...this.transactionPool];
 
     // Mine the transactions in a new block.
@@ -325,8 +347,9 @@ const ARGS = parseArgs(process.argv.slice(2));
 const PORT = ARGS.port || 3000;
 const app = express();
 const nodeId = ARGS.id || uuidv4();
-const votingOptions = ARGS.voting_options || 'yes,no'
-const blockchain = new Blockchain(nodeId, votingOptions);
+const votingOptions = ARGS.voting_options || 'yes,no';
+const publicKeyFile = ARGS.public_key_filename || null;
+const blockchain = new Blockchain(nodeId, votingOptions, publicKeyFile);
 
 // Set up bodyParser:
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -383,7 +406,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value, 'REWARD', '');
+  blockchain.submitTransaction(senderAddress, recipientAddress, value, 'REWARD', '', false);
 
   res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
 });
@@ -487,7 +510,7 @@ app.post("/vote", (req: express.Request, res: express.Response) => {
 
   //Add a VOTE transaction
   console.log('submitting transaction', voterId, value);
-  blockchain.submitTransaction(voterId, '', 0, "VOTE", value);
+  blockchain.submitTransaction(voterId, '', 0, "VOTE", value, true);
 
   res.json(`Your vote for \'${value}\' was added successfully`);
 

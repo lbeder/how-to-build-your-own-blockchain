@@ -16,14 +16,16 @@ NUMBER_OF_VOTERS=20;
 VOTE_OPTIONS='yes,no,abstained';
 MISSING_ARG='';
 BASE_PORT=3000;
+PUBLIC_KEY_FILENAME="publicKey.pem"
 
-while getopts :n:m:o:h option
+while getopts :n:m:o:k:h option
 do
  case "${option}"
  in
  n) NUMBER_OF_NODES=${OPTARG};;
  m) NUMBER_OF_VOTERS=${OPTARG};;
  o) VOTE_OPTIONS=${OPTARG};;
+ k) PUBLIC_KEY_FILENAME=${OPTARG};;
  ?) MISSING_ARG==${OPTARG};;
  esac
 done
@@ -36,6 +38,7 @@ then
     echo '-n : Number of nodes (integer)';
     echo '-m : Number of voters (integer)';
     echo '-o : Voting options - A string of options seperated by comma (default = yes,no)';
+    echo '-k : public key file name'
     echo ' ';
     echo ' example:';
     echo "dvote -n 6 -m 15 -o 'yes,no,maybe'"
@@ -44,12 +47,16 @@ then
 fi
 echo 'all is well'
 
+#generate public and private keys to secure the voting process
+openssl genrsa -out ../privatekey.pem 2048
+openssl rsa -in ../privatekey.pem -pubout -out ../${PUBLIC_KEY_FILENAME}
+
 for index in $(eval echo "{0..$((NUMBER_OF_NODES-1))}");
 do
     echo processing ${index} of ${NUMBER_OF_NODES};
     echo using port $(($BASE_PORT+$index)) in node "NODE"-${index}
 
-    node ../dist/14_d_vote.js --port=$(($BASE_PORT+$index)) --id="NODE"-${index} --voting_options="${VOTE_OPTIONS}" &
+    node ../dist/14_d_vote.js --port=$(($BASE_PORT+$index)) --id="NODE"-${index} --voting_options="${VOTE_OPTIONS}" --public_key_filename="${PUBLIC_KEY_FILENAME}" &
     sleep 0.5
 
 done
