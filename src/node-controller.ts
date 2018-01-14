@@ -10,7 +10,7 @@ export class NodeController extends EventEmitter {
   private peers: { [peerId: string]: Peer };
   private miningHandle: MiningHandle;
   private runningConsensus: Promise<void>;
-  private config: {
+  public config: {
     autoMining: boolean,
     autoConsensus: boolean
   };
@@ -63,7 +63,7 @@ export class NodeController extends EventEmitter {
           });
           this.emit('newBlock');
           this.emit('activity', {
-            msg: `Mined new block ${newBlock.blockNumber} - ${newBlock.sha256().slice(0, 10)}`
+            msg: `Mined new block #${newBlock.blockNumber} - ${newBlock.sha256().slice(0, 10)}`
           });
           this.notifyAll('/new-block');
           this.startMining();
@@ -163,7 +163,7 @@ export class NodeController extends EventEmitter {
 
   public submitTransaction(transaction: Transaction) {
     this.blockchain.submitTransaction(transaction);
-    this.emit('activity', {msg: `Transaction submitted ${serialize(transaction)}`});
+    this.emit('activity', {msg: `Transaction submitted ${JSON.stringify(serialize(transaction))}`});
     this.startMining();
   }
 
@@ -189,5 +189,12 @@ export class NodeController extends EventEmitter {
         console.warn('Consensus failed', err);
       }
     })
+  }
+
+  handleNewPeerNotification() {
+    this.emit('liveState', {
+      peers: Object.keys(this.peers).length
+    });
+    this.handleNewBlockNotifications();
   }
 }

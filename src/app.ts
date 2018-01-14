@@ -10,7 +10,7 @@ const main = require('./ui/main');
 async function init() {
   let controller: NodeController;
   const onNewPeer = () => {
-    controller.handleNewBlockNotifications();
+    controller.handleNewPeerNotification();
   };
 
   const app = express();

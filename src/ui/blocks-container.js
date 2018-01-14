@@ -10,16 +10,19 @@ import {className} from './blocks-container.styl';
 import {headerBlock} from './helpers.styl';
 
 class Block {
-  render({block, pending}) {
+  render({block, pending, myAddress}) {
     const hash = block.sha256();
 
     const transactionsList = block.transactions.map(({senderAddress, recipientAddress, value}) => {
+      const sender = senderAddress === myAddress ? `${senderAddress.slice(0, 10)} (me)` : senderAddress.slice(0, 10);
+      const receiver = recipientAddress === myAddress ? `${recipientAddress.slice(0, 10)} (me)` : recipientAddress.slice(0, 10);
+
       return DOM.div({className: `${className}-transaction`},
         $(FontIcon, {
           className: 'material-icons',
           color: indigoA700
         }, 'local_atm'),
-        `${senderAddress.slice(0, 10)} -> ${recipientAddress.slice(0, 10)} (${value}WC)`
+        `${sender} -> ${receiver} [${value}WBC]`
       );
     });
 
@@ -89,26 +92,26 @@ class Block {
 }
 
 const PendingBlock = connect(['liveState'], class PendingBlock {
-  render({liveState}) {
+  render({liveState, myAddress}) {
     if (!liveState.isMining || !liveState.pendingBlock) return null;
-    return $(Block, {block: liveState.pendingBlock, pending: true});
+    return $(Block, {block: liveState.pendingBlock, pending: true, myAddress});
   }
 });
 
 class BlocksContainer extends Component {
-  render({blocks, liveState}) {
-    const blocksList = blocks.reverse().slice(0, 30).map(block => $(Block, {block}));
+  render({blocks, transaction}) {
+    const blocksList = blocks.reverse().slice(0, 30).map(block => $(Block, {block, myAddress: transaction.myAddress}));
 
     return DOM.div({className},
       DOM.div({className: headerBlock},
         DOM.div({className: `${headerBlock}-title`}, 'Blocks')
       ),
       DOM.div({className: `${className}-blocks`},
-        $(PendingBlock),
+        $(PendingBlock, {myAddress: transaction.myAddress}),
         ...blocksList
       )
     );
   }
 }
 
-export default connect(['blocks'], BlocksContainer);
+export default connect(['blocks', 'transaction'], BlocksContainer);

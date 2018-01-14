@@ -69,6 +69,7 @@ class TransactionSender extends Component {
             {
               name: 'send-coins-to',
               className: `${className}-input`,
+              hintText: 'Recipient Address',
               disabled: isSubmitting,
               onChange: e => this.onFieldChange('to', e.target.value)
             }
@@ -85,7 +86,7 @@ class TransactionSender extends Component {
               onChange: e => this.onFieldChange('value', e.target.value)
             }
           ),
-          DOM.span(null, 'WC')
+          DOM.span(null, 'WBC')
         ),
         DOM.div({className: `${className}-row`},
           transaction.msg && DOM.div({className: `${className}-msg`}, transaction.msg),
