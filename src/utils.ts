@@ -344,7 +344,10 @@ export const updateAccountsWithFinalizedTransactions = (
         );
       }
 
-      const emittedTx = parsedContract[tx.method]();
+      const emittedTx =
+        tx.args.length === 0
+          ? parsedContract[tx.method]()
+          : parsedContract[tx.method](...tx.args);
       if (emittedTx) {
         blockchain.emittedTXMessages.push(emittedTx);
       }

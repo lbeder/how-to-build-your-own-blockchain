@@ -248,7 +248,15 @@ app.put(
   "/mutateContract/:address",
   (req: express.Request, res: express.Response) => {
     const { address } = req.params;
-    const { method, initiaterNode, initiaterAddress, value, action } = req.body;
+    const {
+      method,
+      initiaterNode,
+      initiaterAddress,
+      value,
+      action,
+      args
+    } = req.body;
+
     const { nodeIdx, accountIdx } = getNodeAndContractIndex(
       blockchain.nodes,
       nodeId,
@@ -276,6 +284,7 @@ app.put(
         initiaterNode,
         initiaterAddress,
         method,
+        args,
         digitalSignature
       ),
       false

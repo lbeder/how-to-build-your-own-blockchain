@@ -473,6 +473,8 @@ export class Blockchain {
         "NONE",
         "NONE",
         "NONE",
+        [],
+        "NONE",
         data
       ),
       false
