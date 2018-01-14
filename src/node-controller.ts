@@ -22,8 +22,8 @@ export class NodeController extends EventEmitter {
     this.runningConsensus = Promise.resolve();
   }
 
-  private startMining(force?:boolean) {
-    if (!force && !this.config.autoMining) return;
+  private startMining(force?: boolean) {
+    if (!force && !this.miningHandle && !this.config.autoMining) return;
     if (this.miningHandle) {
       const isTheSameTransactionsCount = this.miningHandle.transactionsCount === this.blockchain.transactionPool.length + 1;
       const didChainChange = this.miningHandle.lastBlock !== this.blockchain.getLastBlock().blockNumber;
@@ -66,6 +66,7 @@ export class NodeController extends EventEmitter {
             msg: `Mined new block #${newBlock.blockNumber} - ${newBlock.sha256().slice(0, 10)}`
           });
           this.notifyAll('/new-block');
+          this.updateBalance();
           this.startMining();
         },
         err => {
@@ -76,16 +77,6 @@ export class NodeController extends EventEmitter {
 
     this.emit('liveState', {
       isMining: true
-    });
-  }
-
-  stopMining() {
-    if (this.miningHandle) {
-      this.miningHandle.stop();
-      this.miningHandle = null;
-    }
-    this.emit('liveState', {
-      isMining: false
     });
   }
 
@@ -100,6 +91,21 @@ export class NodeController extends EventEmitter {
       });
   };
 
+  private updateBalance() {
+    this.emit('liveState', {
+      balance: this.blockchain.getBalance()
+    });
+  }
+
+  public stopMining() {
+    if (this.miningHandle) {
+      this.miningHandle.stop();
+      this.miningHandle = null;
+    }
+    this.emit('liveState', {
+      isMining: false
+    });
+  }
 
   public init({miningAddress = '', autoMining = true, autoConsensus = true} = {miningAddress: ''}) {
     if (!miningAddress) throw new Error('Must provide mining address');
@@ -120,7 +126,7 @@ export class NodeController extends EventEmitter {
     this.emit('init');
   }
 
-  public async consensus(force?:boolean) {
+  public async consensus(force?: boolean) {
     if (!force && !this.config.autoConsensus) return;
 
     if (!Object.keys(this.peers).length || !this.blockchain) return;
@@ -139,6 +145,8 @@ export class NodeController extends EventEmitter {
       this.emit('activity', {msg: `Can't reach a consensus ${blockchainsResults.length}`});
     }
 
+    this.emit('newBlock');
+    this.updateBalance();
     this.startMining();
   }
 
@@ -162,6 +170,9 @@ export class NodeController extends EventEmitter {
   }
 
   public submitTransaction(transaction: Transaction) {
+    const isValid = this.blockchain.verifyTransaction(transaction);
+    if (!isValid) throw new Error('Not enough balance or duplicate');
+
     this.blockchain.submitTransaction(transaction);
     this.emit('activity', {msg: `Transaction submitted ${JSON.stringify(serialize(transaction))}`});
     this.startMining();
@@ -184,6 +195,7 @@ export class NodeController extends EventEmitter {
           msg: `Peer reported new block`
         });
         this.emit('newBlock');
+        this.updateBalance();
       }
       catch (err) {
         console.warn('Consensus failed', err);
@@ -191,10 +203,10 @@ export class NodeController extends EventEmitter {
     })
   }
 
-  handleNewPeerNotification() {
-    this.emit('liveState', {
-      peers: Object.keys(this.peers).length
-    });
+  public handlePeersChanged() {
+    const peers = Object.keys(this.peers).length;
+    this.emit('liveState', {peers});
+    this.emit('activity', {msg: `Peers count changed - now connected to ${peers} peers`});
     this.handleNewBlockNotifications();
   }
 }

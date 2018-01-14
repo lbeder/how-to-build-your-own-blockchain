@@ -133,7 +133,7 @@ export class Blockchain {
     }
   }
 
-  public verifyTransaction(currTransaction: Transaction) {
+  public verifyTransaction(currTransaction: Transaction): boolean {
     // verifying sender's balance
     let senderBalance = 0;
     for (let i = 0; i < this.blocks.length; i++) {
@@ -232,6 +232,17 @@ export class Blockchain {
 
   public getLastBlock(): Block {
     return this.blocks[this.blocks.length - 1];
+  }
+
+  public getBalance() {
+    return this.blocks.reduce((balance, {transactions}) => {
+      balance += transactions.reduce((sum, {senderAddress, recipientAddress, value}) => {
+        if (senderAddress === this.nodeId) sum -= value;
+        if (recipientAddress === this.nodeId) sum += value;
+        return sum
+      }, 0);
+      return balance;
+    }, 0);
   }
 
   public static now(): number {

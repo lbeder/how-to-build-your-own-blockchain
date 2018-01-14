@@ -31,11 +31,18 @@ class TransactionSender extends Component {
       to: fields.to,
       value: value
     });
+
+    this.fields = {};
+    this.forceUpdate();
   }
 
   onFieldChange(key, value) {
     this.fields[key] = value;
-    this.props.transaction.clearMsg();
+    const {msg, errorMsg} = this.props.transaction;
+    if (msg || errorMsg) {
+      this.props.transaction.clearMsg();
+    }
+    this.forceUpdate();
   }
 
   render({transaction}) {
@@ -60,7 +67,7 @@ class TransactionSender extends Component {
         DOM.div({className: `${className}-row`},
           $(FontIcon, {
             className: `material-icons ${className}-arrow`,
-            color: 'rgba(0, 0, 0, 0.4)'
+            color: '#3F51B5'
           }, 'forward')
         ),
         DOM.div({className: `${className}-row`},
@@ -69,9 +76,9 @@ class TransactionSender extends Component {
             {
               name: 'send-coins-to',
               className: `${className}-input`,
-              hintText: 'Recipient Address',
               disabled: isSubmitting,
-              onChange: e => this.onFieldChange('to', e.target.value)
+              value: this.fields.to,
+              onChange: (e, newValue) => this.onFieldChange('to', newValue)
             }
           )
         ),
@@ -83,7 +90,8 @@ class TransactionSender extends Component {
               className: `${className}-input`,
               type: 'number',
               disabled: isSubmitting,
-              onChange: e => this.onFieldChange('value', e.target.value)
+              value: this.fields.value,
+              onChange: (e, newValue) => this.onFieldChange('value', newValue)
             }
           ),
           DOM.span(null, 'WBC')

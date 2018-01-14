@@ -9,12 +9,12 @@ const main = require('./ui/main');
 
 async function init() {
   let controller: NodeController;
-  const onNewPeer = () => {
-    controller.handleNewPeerNotification();
+  const onPeersChanged = () => {
+    controller.handlePeersChanged();
   };
 
   const app = express();
-  const simpleNode = new SimpleNode(app, onNewPeer);
+  const simpleNode = new SimpleNode(app, onPeersChanged);
   controller = new NodeController(simpleNode.peers);
   routes(app, controller);
   const myWallet = new Wallet(controller);
@@ -38,3 +38,7 @@ async function init() {
 
 init()
   .catch(err => console.error(err));
+
+
+// avoid stale peers
+setTimeout(() => window.location.reload(), 1000 * 60 * 30);

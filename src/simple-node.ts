@@ -6,7 +6,7 @@ const SimpleWebRTC = require('simplewebrtc');
 export class SimpleNode {
   public peers: { [peerId: string]: Peer };
 
-  constructor(app: Server, onPeerConnected: () => void) {
+  constructor(app: Server, onPeersChanged: () => void) {
     const webrtc = new SimpleWebRTC({    // we don't do video
       localVideoEl: '',
       remoteVideosEl: '',
@@ -30,7 +30,7 @@ export class SimpleNode {
         if (!calledNewPeer) {
           calledNewPeer = true;
           // delay peer announcement to allow data channel negotiation
-          setTimeout(() => onPeerConnected(), 500);
+          setTimeout(() => onPeersChanged(), 500);
         }
       });
 
@@ -42,8 +42,9 @@ export class SimpleNode {
       console.log('Peer connected', rawPeer.id);
       rawPeer.pc.on('iceConnectionStateChange', () => {
         const state = rawPeer.pc.iceConnectionState;
-        if (state === 'closed') {
+        if (state === 'closed' || state === 'disconnected') {
           delete this.peers[rawPeer.id];
+          onPeersChanged();
         }
       });
       const abstractedPeer = {
@@ -60,7 +61,7 @@ export class SimpleNode {
       peer.listen(app);
     });
 
-    const roomName = 'my-block-chain-1337';
+    const roomName = (new URLSearchParams(window.location.search)).get('room') || 'my-block-chain-1337';
     webrtc.on('connectionReady', () => {
       console.log('SimpleWebRTC Ready');
       webrtc.joinRoom(roomName, (err: any, res: any) => {

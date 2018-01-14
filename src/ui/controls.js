@@ -13,15 +13,28 @@ const PeersCount = connect(['liveState'], class PeersCount {
   }
 });
 
+const OwnBalance = connect(['liveState'], class PeersCount {
+  render({liveState: {balance}}) {
+    return DOM.span(null, balance);
+  }
+});
+
 class Controls extends Component {
   render({actions}) {
     return DOM.div({className: className},
       DOM.div({className: headerBlock},
         DOM.div({className: `${headerBlock}-title`}, 'Controls')
       ),
-      DOM.div({className: `${className}-peers`},
-        DOM.span({className: `${className}-peers-text`}, 'Connected Peers'),
-        $(PeersCount)
+      DOM.div(null,
+        DOM.div({className: `${className}-peers`},
+          DOM.span({className: `${className}-peers-text`}, 'Connected Peers'),
+          $(PeersCount)
+        ),
+        DOM.div({className: `${className}-balance`},
+          DOM.span({className: `${className}-balance-text`}, 'My Balance: '),
+          $(OwnBalance),
+          DOM.span(null, ' WBC')
+        )
       ),
       DOM.div({className: `${className}-boxes`},
         DOM.div({className: `${className}-box`},

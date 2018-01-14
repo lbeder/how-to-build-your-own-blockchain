@@ -14,6 +14,7 @@ const activity = observable([]);
 const liveState = observable({
   status: 'idle',
   isMining: false,
+  balance: 0,
   pendingBlock: null,
   peers: 0,
   assign: action.bound(updates => {
@@ -120,7 +121,7 @@ function blockchainBindings(blockchainController, myWallet) {
             const onConsensusDone = action(() => {
               actions.isConsensusRunning = false;
             });
-            blockchainController.consensus()
+            blockchainController.consensus(true)
               .then(onConsensusDone, onConsensusDone);
             break;
           case 'mineOneBlock':

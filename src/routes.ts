@@ -21,15 +21,19 @@ export function routes(app: any, controller: NodeController) {
   app.post("/transactions", (req: any, res: any) => {
     const transaction = deserialize<Transaction>(Transaction,req.body);
     if (!transaction.verify()) {
-      res.json({success: true, msg: 'Your transaction is no good'});
+      res.json({success: false, msg: 'Your transaction is no good'});
       return;
     }
-    controller.submitTransaction(transaction);
-
-    res.json({
-      success: true,
-      msg: `Transaction ${serialize(transaction)} was added successfully`
-    });
+    try {
+      controller.submitTransaction(transaction);
+      res.json({
+        success: true,
+        msg: `Transaction ${serialize(transaction)} was added successfully`
+      });
+    }
+    catch (err) {
+      res.json({success: false, msg: 'Your transaction is no good'});
+    }
   });
 
   app.post("/new-block", (req: any, res: any) => {
