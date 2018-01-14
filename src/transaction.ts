@@ -50,6 +50,7 @@ export class ContractTransaction extends Transaction {
     initiaterNode: string,
     initiaterAddress: Address,
     method: string,
+    digitalSignature: string,
     data?: string
   ) {
     super(
@@ -59,7 +60,8 @@ export class ContractTransaction extends Transaction {
       recipientNodeId,
       value,
       transactionType,
-      nonce
+      nonce,
+      digitalSignature
     );
     this.data = data;
     this.initiaterNode = initiaterNode;

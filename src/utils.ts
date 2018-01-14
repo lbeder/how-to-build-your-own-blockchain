@@ -413,3 +413,20 @@ export const getPublicKey = (
 
   return blockchain.nodes[nodeIdx].accounts[accountIdx].getPublicKey();
 };
+
+export const encryptPasswords = (blockchain: Blockchain, password: string) => {
+  const passwordDictionary: any = {};
+  blockchain.nodes.forEach(node => {
+    node.accounts.forEach(account => {
+      if (account.type === CONTRACT_ACCOUNT) {
+        return;
+      }
+      passwordDictionary[account.address] = {
+        nodeId: node.id,
+        address: account.address,
+        encryptedPassword: account.encryptActionRequest(password)
+      };
+    });
+  });
+  return passwordDictionary;
+};

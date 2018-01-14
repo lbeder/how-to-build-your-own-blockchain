@@ -84,11 +84,11 @@ export class ExternalAccount extends Account {
 
   // TODO: Encrypting usually work with someone elses key.. This is weird
   encryptActionRequest(action: string): string {
-    return this.privateKey.encrypt(action, "utf8", "base64");
+    return this.publicKey.encrypt(action, "utf8", "base64");
   }
 
   decryptActionRequest(action: string): string {
-    return;
+    return this.privateKey.decrypt(action, "base64", "utf8");
   }
 
   createDigitalSignature(action: string): string {

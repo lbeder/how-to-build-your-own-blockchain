@@ -470,8 +470,9 @@ export class Blockchain {
         value,
         ACTIONS.CREATE_CONTRACT_ACCOUNT,
         0,
-        "init node",
-        "init add",
+        "NONE",
+        "NONE",
+        "NONE",
         data
       ),
       false

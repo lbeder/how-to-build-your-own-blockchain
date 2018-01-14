@@ -28,7 +28,8 @@ import {
   getConsensus,
   getDigitalSignature,
   isCrossOriginRequest,
-  getPublicKey
+  getPublicKey,
+  encryptPasswords
 } from "./utils";
 
 // Web server:
@@ -115,6 +116,15 @@ app.get(
     console.log(`Account name: ${accountName}`);
     const pubkey = getPublicKey(blockchain, node, accountName);
     res.json(pubkey);
+  }
+);
+
+app.get(
+  "/encryptPassword/:password",
+  (req: express.Request, res: express.Response) => {
+    const { password } = req.params;
+    const encryptedPasswordDictionary = encryptPasswords(blockchain, password);
+    res.json(encryptedPasswordDictionary);
   }
 );
 
@@ -238,7 +248,7 @@ app.put(
   "/mutateContract/:address",
   (req: express.Request, res: express.Response) => {
     const { address } = req.params;
-    const { method } = req.body;
+    const { method, initiaterNode, initiaterAddress, value, action } = req.body;
     const { nodeIdx, accountIdx } = getNodeAndContractIndex(
       blockchain.nodes,
       nodeId,
@@ -246,10 +256,13 @@ app.put(
       "Could not find contract node or address"
     );
 
-    // Create Transaction
-    const { initiaterNode, initiaterAddress, value } = req.body;
+    const digitalSignature = getDigitalSignature(
+      blockchain.nodes,
+      initiaterNode,
+      initiaterAddress,
+      action
+    );
 
-    // TODO: address should specify who inited the mutation
     // Add transaction to blockchain
     const transaction = blockchain.submitTransaction(
       new ContractTransaction(
@@ -262,7 +275,8 @@ app.put(
         blockchain.nodes[nodeIdx].accounts[accountIdx].nonce,
         initiaterNode,
         initiaterAddress,
-        method
+        method,
+        digitalSignature
       ),
       false
     );
@@ -287,12 +301,12 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     data
   } = req.body;
   // TODO: x origin req should take into consideration contract constraints
-  if (isCrossOriginRequest(senderNodeId, nodeId)) {
-    console.log(
-      `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
-    );
-    return;
-  }
+  // if (isCrossOriginRequest(senderNodeId, nodeId)) {
+  //   console.log(
+  //     `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
+  //   );
+  //   return;
+  // }
   const value = Number(req.body.value);
 
   if (
