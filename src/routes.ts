@@ -19,7 +19,7 @@ export function routes(app: any, controller: NodeController) {
   });
 
   app.post("/transactions", (req: any, res: any) => {
-    const transaction = Transaction.deserialize(req.body);
+    const transaction = deserialize<Transaction>(Transaction,req.body);
     if (!transaction.verify()) {
       res.json({success: true, msg: 'Your transaction is no good'});
       return;

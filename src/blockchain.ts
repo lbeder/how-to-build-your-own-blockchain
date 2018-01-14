@@ -16,7 +16,7 @@ export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
   public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
 
-  public static readonly DIFFICULTY = 10;
+  public static readonly DIFFICULTY = 12;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
 
   public static readonly MINING_SENDER = "<COINBASE>";
@@ -86,7 +86,7 @@ export class Blockchain {
 
   private handleNewBlock(newBlock: Block, acceptedTransactionsCount: number) {
     this.blocks.push(newBlock);
-    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount, -1);
+    this.transactionPool = this.transactionPool.slice(acceptedTransactionsCount);
   }
 
   public consensus(blockchains: Array<Array<Block>>): boolean {
@@ -134,11 +134,14 @@ export class Blockchain {
   public verifyTransaction(currTransaction: Transaction) {
     // verifying sender's balance
     let senderBalance = 0;
-    this.blocks.forEach(block => {
-      block.transactions.forEach(transaction => {
-        if(currTransaction.signature == transaction.signature){
+    for (let i = 0; i < this.blocks.length; i++) {
+      const block = this.blocks[i];
+      for (let j = 0; j < block.transactions.length; j++) {
+        const transaction = block.transactions[j];
+        if (currTransaction.isEqual(transaction)) {
           return false;
         }
+
         // reduce from balance
         if (transaction.senderAddress === currTransaction.senderAddress) {
           senderBalance -= transaction.value;
@@ -148,8 +151,8 @@ export class Blockchain {
         if (transaction.recipientAddress === currTransaction.senderAddress) {
           senderBalance += transaction.value;
         }
-      });
-    });
+      }
+    }
     return senderBalance >= currTransaction.value;
   }
 
@@ -165,7 +168,7 @@ export class Blockchain {
     this.transactionPool = relevantTransactions;
 
     const transactions = [
-      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, new Uint8Array([]), Date.now().toString()),
+      new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, '', Date.now().toString()),
       ...this.transactionPool.slice(0, Blockchain.MAX_BLOCK_SIZE - 1)
     ];
 
