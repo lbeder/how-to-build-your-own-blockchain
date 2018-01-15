@@ -64,6 +64,23 @@ export class Transaction {
     hash() {
         return sha256(JSON.stringify(this.toJson()));
     }
+
+    public static verify(transaction: Transaction) {
+        // Check that all of the inputs of the transaction belong to the same wallet
+        const sameWallet = transaction.inputs.every(txin =>
+            txin.parentOutput.recipientAddress === transaction.inputs[0].parentOutput.recipientAddress
+        );
+
+        // Check that the transaction is signed by the owner of the wallet
+        const correctSignature = verifySignature(transaction.wallet.address, JSON.stringify(transaction.toJson()), transaction.signature);
+
+        // Check that the sender have enough funds for this transaction
+        const totalIn = transaction.inputs.reduce((sum, txin) => txin.parentOutput.amount + sum, 0);
+        const totalOut = transaction.outputs.reduce((sum, txout) => txout.amount + sum, 0);
+        const funds = totalOut <= totalIn;
+
+        return sameWallet && correctSignature && funds;
+    }
 }
 
 export class GenesisTransaction extends Transaction {
@@ -81,6 +98,7 @@ export class Block {
     nonce: number;
     hash: string;
     blockNumber: number;
+    validTransaction: boolean;
 
     constructor(
         public transactions: Transaction[],
@@ -95,7 +113,11 @@ export class Block {
             this.blockNumber = 0;
         }
 
-        this.mine();
+        this.validTransaction = transactions.every(Transaction.verify);
+
+        if (this.validTransaction) {
+            this.mine();
+        }
     }
 
     toJson() {
@@ -349,7 +371,7 @@ export class Blockchain {
 
         const txOutputs = [
             new TransactionOutput(recipientAddress, value),
-            new TransactionOutput(senderWallet.address, senderBalance - value),
+            new TransactionOutput(senderWallet.address, Math.abs(senderBalance - value)),
         ];
         this.transactionPool.push(new Transaction(senderWallet, txinputs, txOutputs));
     }
@@ -358,6 +380,11 @@ export class Blockchain {
     public createBlock(minerAddress: string): Block {
         // Mine the transactions in a new block.
         const newBlock = new Block(this.transactionPool, this.getLastBlock(), minerAddress);
+
+        if (!newBlock.validTransaction) {
+            console.log('invalid transaction');
+            throw 'Invalid transaction';
+        }
 
         // Append the new block to the blockchain.
         this.blocks.push(newBlock);
@@ -443,9 +470,13 @@ app.get("/blocks/:id", (req: express.Request, res: express.Response) => {
 app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
     // Mine the new block.
     const minerAddress = req.body.minerAddress;
-    const newBlock = blockchain.createBlock(minerAddress);
+    try {
+        const newBlock = blockchain.createBlock(minerAddress);
+        res.json(`Mined new block #${newBlock.blockNumber}`);
+    } catch (err) {
+        res.status(400).send(err);
+    }
 
-    res.json(`Mined new block #${newBlock.blockNumber}`);
 });
 
 // Show all transactions in the transaction pool.

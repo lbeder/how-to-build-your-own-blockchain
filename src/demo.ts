@@ -18,10 +18,19 @@ async function main() {
     await mine(walterWallet.address);
     await printBalances(aliceWallet.address, bobWallet.address, walterWallet.address);
 
-    console.log('Walter sent 5 coins to Bob and Bob sent 8 coins to Walter. Walter mined a block.');
+    console.log('Walter sent 5 coins to Bob and Bob sent 4 coins to Walter. Walter mined a block.');
     await transaction(walterWallet, bobWallet.address, 5);
-    await transaction(bobWallet, walterWallet.address, 8);
+    await transaction(bobWallet, walterWallet.address, 4);
     await mine(walterWallet.address);
+    await printBalances(aliceWallet.address, bobWallet.address, walterWallet.address);
+
+    console.log('Bob tried to send 10 coins to Alice (more than he has). Walter mined a block.');
+    await transaction(bobWallet, aliceWallet.address, 10);
+    try {
+        await mine(walterWallet.address);
+    } catch (e) {
+        console.error(e.response.data);
+    }
     await printBalances(aliceWallet.address, bobWallet.address, walterWallet.address);
 }
 
