@@ -99,6 +99,7 @@ export class Block {
     hash: string;
     blockNumber: number;
     validTransaction: boolean;
+    blockDifficulty = Block.TARGET;
 
     constructor(
         public transactions: Transaction[],
@@ -154,7 +155,7 @@ export class Block {
                 pow = `0x${pow}`;
             }
 
-            return new BigNumber(pow).lessThanOrEqualTo(Block.TARGET.toString());
+            return new BigNumber(pow).lessThanOrEqualTo(this.blockDifficulty.toString());
         } catch {
             return false;
         }
@@ -300,8 +301,6 @@ export class Blockchain {
                 }
 
                 // Verify the difficutly of the PoW.
-                //
-                // TODO: what if the diffuclty was adjusted?
                 if (!current.isPoWValid(current.sha256())) {
                     throw new Error(`Invalid previous block hash's difficutly for block #${i}!`);
                 }
@@ -393,7 +392,7 @@ export class Blockchain {
         this.transactionPool = [];
 
         // Save the blockchain to the storage.
-        // this.save();
+        this.save();
 
         return newBlock;
     }
