@@ -16,11 +16,18 @@ const config = {
       'preact-compat',
       'material-ui',
       'mobx',
-      'mobx-preact'
+      'mobx-preact',
+      'bignumber.js',
+      'classnames',
+      'deep-equal',
+      'js-sha256',
+      'routes',
+      'simplewebrtc',
+      'uuid'
     ]
   },
   output: {
-    path: resolve(__dirname, 'dist'),
+    path: resolve(__dirname, 'docs'),
     filename: '[name].[hash].js',
     chunkFilename: '[name].[hash].js'
   },
@@ -34,7 +41,10 @@ const config = {
   module: {
     rules: [
       {
-        test: /\.tsx?$/, loader: 'ts-loader'
+        test: /\.tsx?$/, loader: 'ts-loader',
+        options: {
+          transpileOnly: true
+        }
       },
       {
         test: /\.(css|styl)$/,
@@ -71,7 +81,7 @@ const config = {
             loader: 'file-loader',
             options: {
               name: '[name].[ext]',
-              outputPath: './assets/media/'
+              outputPath: './assets/'
             }
           }
         ]
@@ -84,7 +94,6 @@ const config = {
             options: {
               name: '[name].[ext]',
               outputPath: './assets/fonts/'
-              //publicPath: './assets/fonts/'
             }
           }
         ]
@@ -94,10 +103,10 @@ const config = {
   plugins: [
     new HtmlWebpackPlugin({template: 'app.html'}),
     extractPlugin,
-    new CleanWebpackPlugin(['dist'])
+    new CleanWebpackPlugin(['docs'])
   ],
   devServer: {
-    contentBase: resolve(__dirname, './dist/assets/media'),
+    contentBase: resolve(__dirname, './docs/assets'),
     compress: true,
     port: 12000,
     stats: 'errors-only',
