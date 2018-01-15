@@ -217,9 +217,10 @@ echo -e && read -n 1 -s -r -p "Deploying CounterContract. Press any key to conti
 # CounterContract example
 curl -X POST -H "Content-Type: application/json" -d '{
     "address": "CounterContract",
-	"balance": 1000,
+	"balance": 0,
+    "counter": 0,
 	"type": "CONTRACT_ACCOUNT",
-	"data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
+	"data": "({ balance: 0, counter: 0, incrementValue: function() { this.counter++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE2_URL}/propogateContract" -w "\n" 
 
 echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
