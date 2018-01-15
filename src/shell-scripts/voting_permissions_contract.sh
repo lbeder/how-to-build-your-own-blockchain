@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# We deploy a smart contract which represents a DAO voting process.
+# Authorized members of the DAO will vote on who gets a Bonus.
+# When the vote is over, the contract will emit a transaction which
+# sends funds to the elected winner.
+
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 

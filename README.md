@@ -1,21 +1,38 @@
-# how-to-build-your-own-blockchain
+# My Pull Request
 
-In this repository, you'll find the source code and material of our first [How to Build Your Own Blockchain](https://www.facebook.com/events/541216486228386/) event.
+In this repository, you'll find the source code for my pull request.
 
-You can find the slides of the talk here: [How to Build Your Own Blockchain - Slides](https://www.slideshare.net/LeonidBeder/how-to-build-your-own-blockchain).
+I set out to build a blockchain inspired by the Ethereum implementation.
 
-![How to Build Your Own Blockchain](images/event.png)
+[I wrote an in-depth post about the features I implemented,](https://medium.com/@omergoldberg/building-a-blockchain-the-grey-paper-5be456018040)
+the architecture and the overall approach. I chose to write it on Medium, as it is easier to format. I recommend reading the post, as it aims to explain my work clearly.
 
-## Blockchain Academy
+## Smart Contracts
 
-Blockchain Academy, the community for technologists looking to learn more about crypto and Blockchain technology.
+Enable users to write smart contracts and decentralized applications where they can create their own arbitrary rules for ownership, transaction formats and state transition functions.
 
-So you’re interested in Blockchain? If you came to this page it probably means that despite the hundreds of events, groups and pages you have yet to find one entity that caters to your Blockchain needs.
+## Accounting Systems
 
-If Crypto trading advice and strategy is what you’re into or if high level sessions that will provide you with buzzwords but not much else - please continue your search. However, if you’re a Blockchain professional that is interested in an active and productive discussion with other Blockchain professionals… Or if you’re a top notch backend/cloud/cyber/fintech professional that is actively looking to get a running start into a new and exciting technological field - this is the place for you.
+Users will be able to register accounts (external accounts) with a balance, and initiate transfers of funds. Additionally, users can register contract accounts and deploy smart contracts across the network
 
-Blockchain academy was founded by top tier professionals that have been actively working with and in Blockchain technology for years in order to provide those who use it in practice a home and a framework to help each other grow and help applicable newcomers learn the basics and a lot more. In this case; only those who can (and do) - will teach!
+## Transaction-based state machine
 
-## License
+State is composed of ownership status of currency within the system. All actions dispatched by nodes in the network are verified and checked before mutating state and being written to the blockchain.
 
-[MIT](LICENSE)
+## Secured and validated transactions and state transitions.
+
+Authenticating accouts is done via RSA encryption. Upon account initialization a private, public key pair is created and written to disk. These keys are used to digitally sign outgoing transaction requests with the account credentials.
+
+## Getting Started
+
+* npm install
+
+* navigate to root of how-build-your-own-blockchain and run tsc -w (assuming you have the typescript compiler installed globally)
+
+## Postman with new API calls
+
+Please load the Postman client with the postman_collection_omer.json file.
+
+## Running Scripts
+
+The src/shell-scripts dir contains all of the tests. Each test is explained in the Medium post.

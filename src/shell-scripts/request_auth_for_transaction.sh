@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 
 # Create accounts with balance of 100
-# We'll do a series of transactions, followed by mining and consensus
-# We'll verify that every account has the proper balance, and that the
-# blockchain correctly reflects the transaction history.
+# This is a basic "example" where we ask via the shell if an account
+# authorizes a transaction request on his behalf
 
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT

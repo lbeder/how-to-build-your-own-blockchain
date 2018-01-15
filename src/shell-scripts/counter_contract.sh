@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # We will deploy the CounterContract example. We will access the incrementValue method on the contract 3 times
-# and verify that the "balance" is 1003. 
+# and verify that the "counter" is 3. 
 
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
