@@ -11,7 +11,8 @@
   "homepage": "https://github.com/lbeder/blockchain-academy-how-build-your-own-blockchain#readme",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "ts-node src/final.ts"
+    "start": "ts-node src/final.ts",
+    "demo": "ts-node src/demo.ts"
   },
   "dependencies": {
     "@types/axios": "^0.14.0",

@@ -233,18 +233,40 @@ export class Blockchain {
     public nodeId: string;
     public nodes: Set<Node>;
     public blocks: Array<Block>;
-    public transactionPool: Array<Transaction>;
+    private _transactionPool: Array<Transaction>;
     private storagePath: string;
 
     constructor(nodeId: string) {
         this.nodeId = nodeId;
         this.nodes = new Set<Node>();
-        this.transactionPool = [];
-
         this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
+        this.initTransactionPool();
 
         // Load the blockchain from the storage.
         this.load();
+    }
+
+    private initTransactionPool() {
+        try {
+            const txpool = fs.readFileSync(this.storagePath + 'txpool', 'utf-8');
+            this._transactionPool = deserialize<Transaction[]>(Transaction, JSON.parse(txpool));
+        } catch {
+            this._transactionPool = [];
+        }
+    }
+
+    public get transactionPool() {
+        return this._transactionPool;
+    }
+
+    public addToTransactionPool(tx: Transaction) {
+        this._transactionPool.push(tx);
+        fs.writeFileSync(this.storagePath + 'txpool', JSON.stringify(serialize(this._transactionPool)), "utf8");
+    }
+
+    public clearTransactionPool() {
+        this._transactionPool = [];
+        fs.writeFileSync(this.storagePath + 'txpool', JSON.stringify(serialize(this._transactionPool)), "utf8");
     }
 
     // Registers new node.
@@ -372,7 +394,7 @@ export class Blockchain {
             new TransactionOutput(recipientAddress, value),
             new TransactionOutput(senderWallet.address, Math.abs(senderBalance - value)),
         ];
-        this.transactionPool.push(new Transaction(senderWallet, txinputs, txOutputs));
+        this.addToTransactionPool(new Transaction(senderWallet, txinputs, txOutputs));
     }
 
     // Creates new block on the blockchain.
@@ -389,7 +411,7 @@ export class Blockchain {
         this.blocks.push(newBlock);
 
         // Remove the mined transactions.
-        this.transactionPool = [];
+        this.clearTransactionPool();
 
         // Save the blockchain to the storage.
         this.save();
