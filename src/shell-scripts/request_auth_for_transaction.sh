@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# Create accounts with balance of 100
+# We'll do a series of transactions, followed by mining and consensus
+# We'll verify that every account has the proper balance, and that the
+# blockchain correctly reflects the transaction history.
+
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
@@ -213,63 +218,10 @@ curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "
 curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 
 # Reach a consensus on nodes:
-echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue... \n" && echo -e
+echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue..." && echo -e
 
-curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
-curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
-curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
-
-sleep 2 
-
-echo -e && read -n 1 -s -r -p "Deploying CounterContract. Press any key to continue... " && echo -e
-
-# CounterContract example
-curl -X POST -H "Content-Type: application/json" -d '{
-    "address": "DavinciPaintingContract",
-	"balance": 1000,
-	"type": "CONTRACT_ACCOUNT",
-	"data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
-}' "${NODE2_URL}/propogateContract" -w "\n" 
-
-echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
-
-# Mutate CounterContract state
-curl -X PUT -H "Content-Type: application/json" -d '{
-  "senderAddress": "DavinciPaintingContract",
-  "initiaterNode": "B",
-  "initiaterAddress": "Bob",
-  "value": 0,
-  "methodType": "sendable",
-  "method": "incrementValue",
-  "action": "mutate_contract"
-}' "${NODE2_URL}/mutateContract/DavinciPaintingContract" -w "\n"
-
-sleep 1
-
-echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
-
-curl -X PUT -H "Content-Type: application/json" -d '{
-  "senderAddress": "DavinciPaintingContract",
-  "initiaterNode": "B",
-  "initiaterAddress": "Bob",
-  "value": 0,
-  "methodType": "sendable",
-  "method": "incrementValue",
-  "action": "mutate_contract"
-}' "${NODE2_URL}/mutateContract/DavinciPaintingContract" -w "\n"
-
-echo -e && read -n 1 -s -r -p "Mining nodes on Node2. Press any key to continue... " && echo -e
-
-# Mine blocks on Node B
-curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
-
-echo -e && read -n 1 -s -r -p "Getting consensus on all nodes. Press any key to continue... " && echo -e
-
-# Get consensus on all nodes -> each node should have a contract with balance of 1002
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
 
 wait
-
-

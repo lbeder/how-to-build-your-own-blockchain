@@ -200,7 +200,7 @@ app.get("/contracts", (req: express.Request, res: express.Response) => {
 app.post("/deployContract", (req: express.Request, res: express.Response) => {
   const { contractName, contract, value, type } = req.body;
   blockchain.submitContract(contractName, value, type, contract);
-  res.json(JSON.stringify(`${nodeId} deployed contracts!`));
+  res.end();
 });
 
 // TODO: Omer
@@ -290,7 +290,7 @@ app.put(
       false
     );
 
-    res.json(`Successfully mutated ${address} contract state`);
+    res.end();
   }
 );
 
@@ -391,7 +391,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
 app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   getConsensus(req, res, blockchain, nodeId);
-  res.json(`${nodeId} consensus proogation is complete`);
+  res.end();
 });
 
 // Start server

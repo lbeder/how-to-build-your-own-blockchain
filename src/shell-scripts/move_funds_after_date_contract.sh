@@ -147,63 +147,51 @@ sleep 2
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
-echo -n "Message for Node B, Address Bob. Authorization request for transferring 12345 coins to Node B, Eve. (y / n)"
-read -r response
-if [[ $response = "y" ]]; then 
-    echo "Signing transaction with digital signature..."
-    curl -X POST -H "Content-Type: application/json" -d '{
-    "senderNodeId": "B",
-    "senderAddress": "Bob",
-    "recipientNodeId": "B",
-    "recipientAddress": "Eve",
-    "value": 20,
-    "action": "TRANSACTION_EXTERNAL_ACCOUNT",
-    "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
-    }' "${NODE2_URL}/transactions" -w "\n"
-fi
+echo -n "Message for Node B, Address Bob. Authorization request for transferring 20 coins to Node B, Eve."
+echo "Signing transaction with digital signature..."
+curl -X POST -H "Content-Type: application/json" -d '{
+"senderNodeId": "B",
+"senderAddress": "Bob",
+"recipientNodeId": "B",
+"recipientAddress": "Eve",
+"value": 20,
+"action": "TRANSACTION_EXTERNAL_ACCOUNT",
+"data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
+}' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node A, Address Alice. Authorization request for transferring 66 coins to Node B, Eve. (y / n)"
-read -r response
-if [[ $response = "y" ]]; then 
-    echo "Signing transaction with digital signature..."
-    curl -X POST -H "Content-Type: application/json" -d '{
-    "senderNodeId": "A",
-    "senderAddress": "Alice",
-    "recipientNodeId": "B",
-    "recipientAddress": "Eve",
-    "value": 40,
-    "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-    }' "${NODE1_URL}/transactions" -w "\n"
-fi
+echo -n "Message for Node A, Address Alice. Authorization request for transferring 40 coins to Node B, Eve." 
+echo "Signing transaction with digital signature..."
+curl -X POST -H "Content-Type: application/json" -d '{
+"senderNodeId": "A",
+"senderAddress": "Alice",
+"recipientNodeId": "B",
+"recipientAddress": "Eve",
+"value": 40,
+"action": "TRANSACTION_EXTERNAL_ACCOUNT"
+}' "${NODE2_URL}/transactions" -w "\n"
 
 
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 401 coins to Node B, Alice. (y / n)"
-read -r response
-if [[ $response = "y" ]]; then 
-    echo "Signing transaction with digital signature..."
-    curl -X POST -H "Content-Type: application/json" -d '{
-    "senderNodeId": "B",
-    "senderAddress": "Eve",
-    "recipientNodeId": "A",
-    "recipientAddress": "Alice",
-    "value": 37,
-    "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-    }' "${NODE2_URL}/transactions" -w "\n"
-fi
+echo -n "Message for Node B, Address Eve. Authorization request for transferring 37 coins to Node B, Alice." 
+echo "Signing transaction with digital signature..."
+curl -X POST -H "Content-Type: application/json" -d '{
+"senderNodeId": "B",
+"senderAddress": "Eve",
+"recipientNodeId": "A",
+"recipientAddress": "Alice",
+"value": 37,
+"action": "TRANSACTION_EXTERNAL_ACCOUNT"
+}' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 401 coins to Node B, Alice. (y / n)"
-read -r response
-if [[ $response = "y" ]]; then 
-    echo "Signing transaction with digital signature..."
-    curl -X POST -H "Content-Type: application/json" -d '{
-    "senderNodeId": "B",
-    "senderAddress": "Eve",
-    "recipientNodeId": "A",
-    "recipientAddress": "Alice",
-    "value": 5,
-    "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-    }' "${NODE2_URL}/transactions" -w "\n"
-fi
+echo -n "Message for Node B, Address Eve. Authorization request for transferring 5 coins to Node B, Alice."
+echo "Signing transaction with digital signature..."
+curl -X POST -H "Content-Type: application/json" -d '{
+"senderNodeId": "B",
+"senderAddress": "Eve",
+"recipientNodeId": "A",
+"recipientAddress": "Alice",
+"value": 5,
+"action": "TRANSACTION_EXTERNAL_ACCOUNT"
+}' "${NODE2_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e
@@ -229,7 +217,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 	"balance": 1000,
 	"type": "CONTRACT_ACCOUNT",
 	"data": "({balance: 400, expirationDate: new Date(\"October 13, 2016 11:13:00\"),id: 2, fromAddress: \"Stacy\", call: function() { return { getBalance: this.balance, getFromAddress: this.fromAddress }; }, send: function() { return { moveFunds: this.moveFunds }; }, abi: function() { return { callables: this.call(), sendables: this.send() }; }, moveFunds: function() { var currentDate = new Date(); if (currentDate > this.expirationDate) { console.log(currentDate, this.expirationDate, \"moving funds....\");} return { senderNodeId: \"A\", senderAddress: \"Selena Gomez\", recipientNodeId: \"A\", recipientAddress: \"Alice\", value: 20, action: \"TRANSACTION_EXTERNAL_ACCOUNT\" };} })"
-}' "${NODE1_URL}/propogateContract" -w "\n" 
+}' "${NODE2_URL}/propogateContract" -w "\n" 
 
 echo -e && read -n 1 -s -r -p "Mutating MoveFundsAfterCertainDateContract state. Press any key to continue..." && echo -e
 
@@ -241,65 +229,27 @@ curl -X PUT -H "Content-Type: application/json" -d '{
   "value": 0,
   "methodType": "sendable",
   "method": "moveFunds",
-  "action": "mutate_contract"
-}' "${NODE1_URL}/mutateContract/MoveFunds" -w "\n"
-
-sleep 1
-
-echo -e && read -n 1 -s -r -p "Mutating MoveFundsAfterCertainDateContract state. Press any key to continue..." && echo -e
-
-# Mutate MoveFundsAfterCertainDateContract state
-curl -X PUT -H "Content-Type: application/json" -d '{
-  "senderAddress": "MoveFunds",
-  "initiaterNode": "A",
-  "initiaterAddress": "Selena Gomez",
-  "value": 0,
-  "methodType": "sendable",
-  "method": "moveFunds",
-  "action": "mutate_contract"
-}' "${NODE1_URL}/mutateContract/MoveFunds" -w "\n"
-
-echo -e && read -n 1 -s -r -p "Attempting a Cross Origin mutation request. Press any key to continue..." && echo -e
-
-# Cross origin request -> should be ignored
-curl -X PUT -H "Content-Type: application/json" -d '{
-  "senderAddress": "moveFunds",
-  "initiaterNode": "B",
-  "initiaterAddress": "Bob",
-  "value": 0,
-  "methodType": "sendable",
-  "method": "moveFunds",
+  "args": [],
   "action": "mutate_contract"
 }' "${NODE2_URL}/mutateContract/MoveFunds" -w "\n"
 
-echo -e && read -n 1 -s -r -p "Mining Cross Origin transaction. Press any key to continue... " && echo -e
+sleep 1
 
 curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 
-echo -e && read -n 1 -s -r -p "Attempting to reach consensus on Cross Origin transaction. Press any key to continue... " && echo -e
-# Get consensus on all nodes -> Node A should have 2 pending transactions as a result of invoking the MoveFundsContract moveFunds method.
+echo -e && read -n 1 -s -r -p "Attempting to reach consensus. Press any key to continue... " && echo -e
+
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
 
-echo -e && read -n 1 -s -r -p "Mining nodes on Node1. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "View pending transaction in mempool for Node B (3001). Press any key to continue..." && echo -e
 
-# Mine blocks on Node A
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 
-echo -e && read -n 1 -s -r -p "Getting consensus on all nodes. Press any key to continue..." && echo -e
-
-# Get consensus on all nodes -> Node A should have 2 pending transactions as a result of invoking the MoveFundsContract moveFunds method.
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
-
-sleep 3
-
-# Show pending transactions on Node A, resulting from moveFunds contract invocation
-echo -e && read -n 1 -s -r -p "Viewing transaction on Node 1 (A) Press any key to continue... " && echo -e
-
-curl -i -H "Accept: application/json" -H "Content-Type: application/json" "${NODE1_URL}/transactions"
 
 wait
 

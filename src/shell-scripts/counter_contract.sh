@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 
-# Create accounts with balance of 100
-# We'll do a series of transactions, followed by mining and consensus
-# We'll create a scenario where an account requests an illegal transfer of funds. 
-# We will verify that the transaction will not go through and the appropiate error msg will log
-# We will verify that the blockchain correctly reflects the transaction history.
+# We will deploy the CounterContract example. We will access the incrementValue method on the contract 3 times
+# and verify that the "balance" is 1003. 
 
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
@@ -153,19 +150,19 @@ sleep 2
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
-echo -n "Message for Node B, Address Bob. Authorizing request for transferring 12345 coins to Node B, Eve."
+echo -n "Message for Node B, Address Bob. Authorization request for transferring 20 coins to Node B, Eve."
 echo "Signing transaction with digital signature..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Bob",
 "recipientNodeId": "B",
 "recipientAddress": "Eve",
-"value": 200,
+"value": 20,
 "action": "TRANSACTION_EXTERNAL_ACCOUNT",
 "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
-}' "${NODE1_URL}/transactions" -w "\n"
+}' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node A, Address Alice. Authorizing request for transferring 66 coins to Node B, Eve"
+echo -n "Message for Node A, Address Alice. Authorization request for transferring 40 coins to Node B, Eve."
 echo "Signing transaction with digital signature..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "A",
@@ -177,7 +174,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 }' "${NODE1_URL}/transactions" -w "\n"
 
 
-echo -n "Message for Node B, Address Eve. Authorizing request for transferring 401 coins to Node B, Alice"
+echo -n "Message for Node B, Address Eve. Authorization request for transferring 37 coins to Node B, Alice."
 echo "Signing transaction with digital signature..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
@@ -186,9 +183,9 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "recipientAddress": "Alice",
 "value": 37,
 "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-}' "${NODE1_URL}/transactions" -w "\n"
+}' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node B, Address Eve. Authorizing request for transferring 401 coins to Node B, Alice."
+echo -n "Message for Node B, Address Eve. Authorization request for transferring 401 coins to Node B, Alice. (y / n)"
 echo "Signing transaction with digital signature..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
@@ -197,20 +194,86 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "recipientAddress": "Alice",
 "value": 5,
 "action": "TRANSACTION_EXTERNAL_ACCOUNT"
-}' "${NODE1_URL}/transactions" -w "\n"
+}' "${NODE2_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e
 
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
-curl -X POST -H "Content-Type: application/json" "${NODE1_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
 
 # Reach a consensus on nodes:
-echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "Reaching a consensus. Press any key to continue... \n" && echo -e
 
-curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
+curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
+curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
+
+sleep 2 
+
+echo -e && read -n 1 -s -r -p "Deploying CounterContract. Press any key to continue... " && echo -e
+
+# CounterContract example
+curl -X POST -H "Content-Type: application/json" -d '{
+    "address": "CounterContract",
+	"balance": 1000,
+	"type": "CONTRACT_ACCOUNT",
+	"data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
+}' "${NODE2_URL}/propogateContract" -w "\n" 
+
+echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+
+# Mutate CounterContract state
+curl -X PUT -H "Content-Type: application/json" -d '{
+  "senderAddress": "CounterContract",
+  "initiaterNode": "B",
+  "initiaterAddress": "Bob",
+  "value": 0,
+  "methodType": "sendable",
+  "method": "incrementValue",
+  "args": [],
+  "action": "mutate_contract"
+}' "${NODE2_URL}/mutateContract/CounterContract" -w "\n"
+
+sleep 1
+
+echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+  "senderAddress": "CounterContract",
+  "initiaterNode": "B",
+  "initiaterAddress": "Bob",
+  "value": 0,
+  "methodType": "sendable",
+  "method": "incrementValue",
+  "args": [],
+  "action": "mutate_contract"
+}' "${NODE2_URL}/mutateContract/CounterContract" -w "\n"
+
+echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+
+curl -X PUT -H "Content-Type: application/json" -d '{
+  "senderAddress": "CounterContract",
+  "initiaterNode": "B",
+  "initiaterAddress": "Bob",
+  "value": 0,
+  "methodType": "sendable",
+  "method": "incrementValue",
+  "args": [],
+  "action": "mutate_contract"
+}' "${NODE2_URL}/mutateContract/CounterContract" -w "\n"
+
+echo -e && read -n 1 -s -r -p "Mining nodes on Node2. Press any key to continue... " && echo -e
+
+curl -X POST -H "Content-Type: application/json" "${NODE2_URL}/blocks/mine" -w "\n"
+
+echo -e && read -n 1 -s -r -p "Getting consensus on all nodes. Press any key to continue... " && echo -e
+
+curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
+curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
 
 wait
+
+

@@ -135,7 +135,7 @@ export const getConsensus = (
             })
           )
         ) {
-          console.log(`Node ${nodeId} has reached a consensus on a new state.`);
+          // console.log(`Node ${nodeId} has reached a consensus on a new state.`);
         } else {
           console.log(`Node ${nodeId} has the longest chain.`);
           // Propogate new account data to network
@@ -348,6 +348,7 @@ export const updateAccountsWithFinalizedTransactions = (
         tx.args.length === 0
           ? parsedContract[tx.method]()
           : parsedContract[tx.method](...tx.args);
+
       if (emittedTx) {
         blockchain.emittedTXMessages.push(emittedTx);
       }
