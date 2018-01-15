@@ -5,7 +5,7 @@ This repository was created as part of the how-to-build-your-own-blockchain cont
 
 ## TL;DR
 
-A JS implementation of a simple in-browser blockchain with fancy UI - [check it out](https://mrbar42.github.io/how-build-your-own-blockchain/)
+A JS implementation of a simple in-browser blockchain with fancy UI - [demo](https://mrbar42.github.io/how-build-your-own-blockchain/)
 
 Highlights:
 - Runs in Browser
@@ -23,21 +23,21 @@ Highlights:
 
 ## Feature
 1. Replace networking stack with [WebRTC](https://webrtc.org/)
-  1. nodes are connecting and messaging directly using WebRTC Data-Channels
-  2. Shimmed express and fetch to keep the existing routes interface
+    1. nodes are connecting and messaging directly using WebRTC Data-Channels
+    2. Shimmed express and fetch to keep the existing routes interface
 2. Nodes discovery using a signaling server (provided by [simpleWebRTC](https://simplewebrtc.com/)).
    Once the node has discovered other nodes in the network it disconnects from the signaling server, and all the blockchain communication is done solely via WebRTC
 3. Add auto mining, and consensus, and toggle between auto and manual modes
-  1. In auto mode, mining is continuous and peers keep mining after discovering new blocks,
+    1. In auto mode, mining is continuous and peers keep mining after discovering new blocks,
      they are advertising about new blocks they mined to the network, and run consensus resolving after being notified on new changes in the chain.
-  2. In manual mode, the user manually calls to mine a single block, or to get updates from the network and solve the consensus.
+    2. In manual mode, the user manually calls to mine a single block, or to get updates from the network and solve the consensus.
 4. Revamped transactions
-  1. Automatic transaction broadcast to all peers
-  2. Miners verify that a sender has enough balance
-  3. Transaction are now being signed using ECDSA with [WebCrypto API](https://en.wikipedia.org/wiki/Web_cryptography_API)
-  4. Miners verify that transaction is signed correctly by the sender
-  5. Miners verify that transactions are singular in the chain (by comparing signatures)
-  6. Miners maintain transaction pool, if the block reaches maximum size, they'll keep transactions for later blocks
+    1. Automatic transaction broadcast to all peers
+    2. Miners verify that a sender has enough balance
+    3. Transaction are now being signed using ECDSA with [WebCrypto API](https://en.wikipedia.org/wiki/Web_cryptography_API)
+    4. Miners verify that transaction is signed correctly by the sender
+    5. Miners verify that transactions are singular in the chain (by comparing signatures)
+    6. Miners maintain transaction pool, if the block reaches maximum size, they'll keep transactions for later blocks
 5. WebUI - to make it more approachable for project newcomers, also we think it helps a lot with feeling and understanding what's going on.
 6. Build using webpack, add sourcemaps to make the project more approachable to newcomers
 
