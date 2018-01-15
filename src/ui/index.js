@@ -29,6 +29,17 @@ class Index extends Component {
               className: 'indigo500',
               showMenuIconButton: false
             },
+            DOM.span({
+                className: `${className}-room`
+              },
+              DOM.div({className: `${className}-room-title`}, 'ROOM'),
+              DOM.div({
+                  className: `${className}-room-name`,
+                  title: 'Change the query string to create a new isolated room'
+                },
+                new URLSearchParams(window.location.search).get('room') || ''
+              )
+            ),
             DOM.a({
                 className: `${className}-github-link`,
                 href: 'https://github.com/mrbar42/how-build-your-own-blockchain',

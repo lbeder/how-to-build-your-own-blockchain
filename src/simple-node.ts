@@ -61,7 +61,10 @@ export class SimpleNode {
       peer.listen(app);
     });
 
-    const roomName = (new URLSearchParams(window.location.search)).get('room') || 'my-block-chain-1337';
+    const roomName = (new URLSearchParams(window.location.search)).get('room') || 'webcoin';
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, null, `${location.pathname}?room=${roomName}`);
+    }
     webrtc.on('connectionReady', () => {
       console.log('SimpleWebRTC Ready');
       webrtc.joinRoom(roomName, (err: any, res: any) => {
