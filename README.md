@@ -1,3 +1,28 @@
+d-vote - A distributed voting system based on blockchain technology
+===================================================================
+
+The voting process in democratic societies is based on trust among the parties. Individuals rely on the organizing committee that the whole process is handled properly, and that: 
+- All votes are taken into account
+- All votes are counted and given equal weight
+- Voting is anonymous
+- No one is hiding valid votes
+- Counting votes is error free
+- The voting results published are based on the counts. 
+
+In addition the whole process sufferds from a lack of transparency. Individuals has no insight into the whole process
+
+It appears that in practice, in almost all countries elections always end up with claims from all parties - questioning the validity of the results. In some countries this often lead to instability, violence and chaos 
+
+Implementing distributed voting system based on Blockchain technology can generate trust, and solve many of the challenges faced by democratic societies.
+
+This project based on https://github.com/blockchain-academy/how-build-your-own-blockchain demonstrates such implementation
+
+#usage example:
+    ./14_d_vote.sh -n 6 -m 50 -k "publickey.pem" 
+    This will create 6 nodes, and will simulate 50 random votes
+
+The technical details of the implementation are described in d-vote.md file
+
 # how-to-build-your-own-blockchain
 
 In this repository, you'll find the source code and material of our first [How to Build Your Own Blockchain](https://www.facebook.com/events/541216486228386/) event.
