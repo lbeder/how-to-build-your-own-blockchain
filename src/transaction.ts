@@ -1,5 +1,4 @@
 import {Crypto} from "./crypto";
-import {deserialize, serialize} from "serializer.ts/Serializer";
 
 export type Address = string;
 
