@@ -154,4 +154,12 @@ do
     curl -X PUT "${NODE_URL}/nodes/consensus" -w "\n"
 
 done
+
+# End of voting - send the private key to the node to start counting votes:
+echo -e && read -n 1 -s -r -p "Press any key to end voting..." && echo -e
+
+     curl -F "keyfile=@../privatekey.pem" "${NODE_URL}/end_of_voting"
+
 wait
+exit
+

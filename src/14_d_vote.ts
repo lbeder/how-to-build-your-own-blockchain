@@ -16,7 +16,8 @@ import { Set } from "typescript-collections";
 import * as parseArgs from "minimist";
 import { request } from "https";
 
-import  * as NodeRSA from "node-rsa"
+import * as NodeRSA from "node-rsa";
+import * as expressFileUpload from "express-fileupload";
 
 export type Address = string;
 
@@ -35,7 +36,7 @@ export class Transaction {
     };
     if (isEncrypted) {
       //encrypt the transaction content
-      this.transactionContent = blockchain.getPublicKey().encrypt(content,'hex');
+      this.transactionContent = blockchain.getPublicKey().encrypt(JSON.stringify(content),'base64');
     } else {
       this.transactionContent = content;
     }
@@ -363,6 +364,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 
   res.status(500);
 });
+app.use(expressFileUpload());
 
 // Show all the blocks.
 app.get("/blocks", (req: express.Request, res: express.Response) => {
@@ -533,6 +535,38 @@ app.post("/vote", (req: express.Request, res: express.Response) => {
     res.status(500);
     res.json(err);
     return;
+  });
+
+  //Mark the end of voting, count the votes using the private key
+  app.post("/end_of_voting", (req: any , res: express.Response) => {
+    if (!req.files)
+      return res.status(400).send('No files were uploaded.');
+ 
+    // The name of the input field (i.e. "sampleFile") is used to retrieve the uploaded file
+    let privateKey = req.files.keyfile.data.toString();
+
+    console.log('Counting Votes......');
+    var key =new NodeRSA({b: 2048});
+    key.importKey(privateKey);
+    let results:any = {}
+    
+    //   start counting votes using the private key for 
+    for (let i = 1; i < blockchain.blocks.length; ++i) {
+      for (let j=0;j<blockchain.blocks[i].transactions.length; j++) {
+        if (blockchain.blocks[i].transactions[j].transactionType=="VOTE") {
+          var decryptedData:any = key.decrypt(blockchain.blocks[i].transactions[j].transactionContent);
+          var vote:string = JSON.parse(decryptedData).vote
+          results[vote] = results[vote] ? results[vote] + 1 : 1;
+
+        }
+      }
+    }
+
+    let output="";
+    for (var result in results) {
+      output += result+':'+results[result] + ' ; ';
+    }
+    res.json('***** Voting results : '+output)
   });
 
 });
