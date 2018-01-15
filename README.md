@@ -5,7 +5,7 @@ In this repository, you'll find the source code for my pull request.
 I set out to build a blockchain inspired by the Ethereum implementation.
 
 [I wrote an in-depth post about the features I implemented,](https://medium.com/@omergoldberg/building-a-blockchain-the-grey-paper-5be456018040)
-the architecture and the overall approach. I chose to write it on Medium, as it is easier to format. I recommend reading the post, as it aims to explain my work clearly.
+the architecture and the overall approach. I chose to write it on Medium, as it is easier to format. I recommend reading the post, as it aims to explain my work clearly. The main features implemented are:
 
 ## Smart Contracts
 
