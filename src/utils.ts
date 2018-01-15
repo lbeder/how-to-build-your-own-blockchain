@@ -290,7 +290,6 @@ export const validateAdequateFunds = (
   });
 };
 
-// TODO: Should also support MESSAGING PROTOCOL?
 export const updateAccountsWithFinalizedTransactions = (
   blockchain: Blockchain,
   txpool: Array<any>

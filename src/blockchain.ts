@@ -118,7 +118,6 @@ export class Blockchain {
     });
   }
 
-  // TODO: Omer
   public createAccount(
     address: Address,
     balance: number,
@@ -424,12 +423,10 @@ export class Blockchain {
     return Math.round(new Date().getTime() / 1000);
   }
 
-  // TODO: Omer
   public getBlockNumber(): number {
     return this.blocks.length;
   }
 
-  // TODO: Omer
   public getContracts(): any {
     const currentNodeIdx = this.nodes.findIndex(
       node => node.id === this.nodeId
@@ -446,7 +443,6 @@ export class Blockchain {
     );
   }
 
-  // TODO: Omer
   public submitContract(
     contractName: string,
     value: number,

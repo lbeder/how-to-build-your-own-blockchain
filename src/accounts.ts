@@ -14,7 +14,6 @@ export type CONTRACT_ACCOUNT_TYPE = Address;
 export const CONTRACT_ACCOUNT = "CONTRACT_ACCOUNT";
 export const EXTERNAL_ACCOUNT = "EXTERNAL_ACCOUNT";
 
-// TODO: accounts need to be hashed and saved so they can be restored later
 export class Account {
   public address: Address;
   public balance: number;
@@ -46,7 +45,6 @@ export class ExternalAccount extends Account {
     this.createRSAKeys(address);
   }
 
-  // TODO: Nonce will be incremented when transaction is confirmed
   createTransaction(
     senderNodeId: string,
     senderAddress: Address,
@@ -108,9 +106,6 @@ export class ExternalAccount extends Account {
       "base64"
     );
   }
-
-  // TODO: Send msg, ie. transfer funds or trigger contract execution
-  // sendMessage(requested_transaction: transaction) {}
 }
 
 export class ContractAccount extends Account {

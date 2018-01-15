@@ -150,8 +150,7 @@ sleep 2
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
-echo -n "Message for Node B, Address Bob. Authorization request for transferring 20 coins to Node B, Eve."
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node B\n SenderAddress: Bob\n RecipientNode: B\n RecipientAddress: Eve \n Value: 20\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Bob",
@@ -162,8 +161,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node A, Address Alice. Authorization request for transferring 40 coins to Node B, Eve."
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node A\n SenderAddress: Alice\n RecipientNode: B\n RecipientAddress: Eve \n Value: 40\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "A",
 "senderAddress": "Alice",
@@ -174,8 +172,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 }' "${NODE1_URL}/transactions" -w "\n"
 
 
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 37 coins to Node B, Alice."
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node B\n SenderAddress: Eve\n RecipientNode: B\n RecipientAddress: Alice \n Value: 37\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Eve",
@@ -185,8 +182,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "action": "TRANSACTION_EXTERNAL_ACCOUNT"
 }' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 401 coins to Node B, Alice. (y / n)"
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node B\n SenderAddress: Eve\n RecipientNode: B\n RecipientAddress: Alice \n Value: 37\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Eve",
@@ -223,7 +219,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 	"data": "({ balance: 0, counter: 0, incrementValue: function() { this.counter++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE2_URL}/propogateContract" -w "\n" 
 
-echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "Dispatching transaction to mutate CounterContract state. Press any key to continue..." && echo -e
 
 # Mutate CounterContract state
 curl -X PUT -H "Content-Type: application/json" -d '{
@@ -239,7 +235,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{
 
 sleep 1
 
-echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "Dispatching transaction to mutate contract state. Press any key to continue..." && echo -e
 
 curl -X PUT -H "Content-Type: application/json" -d '{
   "senderAddress": "CounterContract",
@@ -252,7 +248,7 @@ curl -X PUT -H "Content-Type: application/json" -d '{
   "action": "mutate_contract"
 }' "${NODE2_URL}/mutateContract/CounterContract" -w "\n"
 
-echo -e && read -n 1 -s -r -p "Mutating CounterContract state. Press any key to continue..." && echo -e
+echo -e && read -n 1 -s -r -p "Dispatching transaction to mutate contract state. Press any key to continue..." && echo -e
 
 curl -X PUT -H "Content-Type: application/json" -d '{
   "senderAddress": "CounterContract",
@@ -274,6 +270,8 @@ echo -e && read -n 1 -s -r -p "Getting consensus on all nodes. Press any key to 
 curl -X PUT "${NODE2_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE1_URL}/nodes/consensus" -w "\n"
 curl -X PUT "${NODE3_URL}/nodes/consensus" -w "\n"
+
+printf "Contract state was mutated. Check via GET /nodes in Postman"
 
 wait
 

@@ -153,8 +153,7 @@ sleep 2
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
-echo -n "Message for Node B, Address Bob. Authorizing request for transferring 12345 coins to Node B, Eve."
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node B\n SenderAddress: Bob\n RecipientNode: B\n RecipientAddress: Eve \n Value: 200\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Bob",
@@ -165,39 +164,6 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE1_URL}/transactions" -w "\n"
 
-echo -n "Message for Node A, Address Alice. Authorizing request for transferring 66 coins to Node B, Eve"
-echo "Signing transaction with digital signature..."
-curl -X POST -H "Content-Type: application/json" -d '{
-"senderNodeId": "A",
-"senderAddress": "Alice",
-"recipientNodeId": "B",
-"recipientAddress": "Eve",
-"value": 40,
-"action": "TRANSACTION_EXTERNAL_ACCOUNT"
-}' "${NODE1_URL}/transactions" -w "\n"
-
-
-echo -n "Message for Node B, Address Eve. Authorizing request for transferring 401 coins to Node B, Alice"
-echo "Signing transaction with digital signature..."
-curl -X POST -H "Content-Type: application/json" -d '{
-"senderNodeId": "B",
-"senderAddress": "Eve",
-"recipientNodeId": "A",
-"recipientAddress": "Alice",
-"value": 37,
-"action": "TRANSACTION_EXTERNAL_ACCOUNT"
-}' "${NODE1_URL}/transactions" -w "\n"
-
-echo -n "Message for Node B, Address Eve. Authorizing request for transferring 401 coins to Node B, Alice."
-echo "Signing transaction with digital signature..."
-curl -X POST -H "Content-Type: application/json" -d '{
-"senderNodeId": "B",
-"senderAddress": "Eve",
-"recipientNodeId": "A",
-"recipientAddress": "Alice",
-"value": 5,
-"action": "TRANSACTION_EXTERNAL_ACCOUNT"
-}' "${NODE1_URL}/transactions" -w "\n"
 
 # Mine 3 blocks on the first node.
 echo -e && read -n 1 -s -r -p "Mining blocks. Press any key to continue..." && echo -e

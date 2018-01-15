@@ -147,7 +147,7 @@ sleep 2
 # Submit 4 transactions to the first node.
 echo -e && read -n 1 -s -r -p "Submitting transactions. Press any key to continue..." && echo -e
 
-echo -n "Message for Node B, Address Bob. Authorization request for transferring 20 coins to Node B, Eve"
+printf "Message\n SenderNode: Node B\n SenderAddress: Bob\n RecipientNode: B\n RecipientAddress: Eve \n Value: 20\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Bob",
@@ -158,8 +158,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "data": "({ balance: 1000, incrementValue: function() { this.balance++; }, id: 1, fromAddress: \"Alice\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })"
 }' "${NODE2_URL}/transactions" -w "\n"
 
-echo -n "Message for Node A, Address Alice. Authorization request for transferring 40 coins to Node B, Eve"
-echo "Signing transaction with digital signature..."
+printf "Message\n SenderNode: Node A\n SenderAddress: Alice\n RecipientNode: B\n RecipientAddress: Eve \n Value: 40\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "A",
 "senderAddress": "Alice",
@@ -169,8 +168,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 "action": "TRANSACTION_EXTERNAL_ACCOUNT"
 }' "${NODE1_URL}/transactions" -w "\n"
 
-
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 37 coins to Node B, Alice."
+printf "Message\n SenderNode: Node B\n SenderAddress: Eve\n RecipientNode: B\n RecipientAddress: Alice \n Value: 37\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Eve",
@@ -181,7 +179,7 @@ curl -X POST -H "Content-Type: application/json" -d '{
 }' "${NODE2_URL}/transactions" -w "\n"
 
 
-echo -n "Message for Node B, Address Eve. Authorization request for transferring 5 coins to Node B, Alice."
+printf "Message\n SenderNode: Node B\n SenderAddress: Eve\n RecipientNode: B\n RecipientAddress: Alice \n Value: 5\n Signing request..."
 curl -X POST -H "Content-Type: application/json" -d '{
 "senderNodeId": "B",
 "senderAddress": "Eve",

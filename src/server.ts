@@ -84,7 +84,6 @@ app.post("/blocks/mine", (req: express.Request, res: express.Response) => {
   res.json(`Mined new block #${newBlock.blockNumber}`);
 });
 
-// TODO: Omer
 app.post("/createAccount", (req: express.Request, res: express.Response) => {
   const { address, balance, account_type, nodeId } = req.body;
   const createdNode = blockchain.createAccount(
@@ -128,7 +127,6 @@ app.get(
   }
 );
 
-// TODO: Omer
 app.post(
   "/updateAccountData",
   (req: express.Request, res: express.Response) => {
@@ -140,7 +138,6 @@ app.post(
   }
 );
 
-// TODO: Omer
 app.post(
   "/propogateAccountCreation",
   (req: express.Request, res: express.Response) => {
@@ -184,26 +181,27 @@ app.post(
       });
 
     res.status(500);
-    res.json(
-      `Propogated creation of account ${address} of type ${account_type} with balance ${balance}`
+    console.log(
+      `Created:
+      Account:${address}
+      Type: ${account_type}
+      Balance: ${balance}`
     );
+    res.end();
   }
 );
 
-// TODO: Omer
 app.get("/contracts", (req: express.Request, res: express.Response) => {
   const contracts = blockchain.getContracts();
   res.json(contracts);
 });
 
-// TODO: Omer
 app.post("/deployContract", (req: express.Request, res: express.Response) => {
   const { contractName, contract, value, type } = req.body;
   blockchain.submitContract(contractName, value, type, contract);
   res.end();
 });
 
-// TODO: Omer
 app.post(
   "/propogateContract",
   (req: express.Request, res: express.Response) => {
@@ -309,7 +307,6 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
     method,
     data
   } = req.body;
-  // TODO: x origin req should take into consideration contract constraints
   // if (isCrossOriginRequest(senderNodeId, nodeId)) {
   //   console.log(
   //     `Cross Origin Requests are prohibited ${senderNodeId} ${nodeId}`
@@ -359,9 +356,7 @@ app.post("/transactions", (req: express.Request, res: express.Response) => {
 
   blockchain.submitTransaction(newAccntTx, true);
 
-  res.json(
-    `Transaction from ${senderAddress} to ${recipientAddress} was added successfully`
-  );
+  res.end();
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
