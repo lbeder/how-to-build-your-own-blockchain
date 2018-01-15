@@ -1,0 +1,652 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Blockchain Academy",
+		"_postman_id": "752b059e-cc79-cfbe-86e8-0ce9785b8395",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "propogateAccountCreation (3000)",
+			"request": {
+				"url": "http://localhost:3000/propogateAccountCreation",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"Ali Paul\",\n\t\"balance\": \"200000000\",\n\t\"action\": \"create_external_account\",\n\t\"account_type\": \"external_account\",\n\t\"nodeId\": \"A\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "propogateAccountCreation (3001)",
+			"request": {
+				"url": "http://localhost:3001/propogateAccountCreation",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"OneRepublic\",\n\t\"balance\": \"43\",\n\t\"action\": \"create_external_account\",\n\t\"account_type\": \"external_account\",\n\t\"nodeId\": \"B\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "propogateAccountCreation (3002)",
+			"request": {
+				"url": "http://localhost:3002/propogateAccountCreation",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"Wolf Larsen\",\n\t\"balance\": \"43\",\n\t\"action\": \"create_external_account\",\n\t\"account_type\": \"external_account\",\n\t\"nodeId\": \"A\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/updateAccountData (3000)",
+			"request": {
+				"url": "http://localhost:3000/updateAccountData",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"nodeId\": \"A\",\n\t\"accounts\": []\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "pubKey (3000)",
+			"request": {
+				"url": "http://localhost:3000/publicKey/A/Alice",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "encryptPassword (3000)",
+			"request": {
+				"url": "http://localhost:3000/encryptPassword/secret",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks (3000)",
+			"request": {
+				"url": "http://localhost:3000/blocks",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks (3001)",
+			"request": {
+				"url": "http://localhost:3001/blocks",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks (3002)",
+			"request": {
+				"url": "http://localhost:3001/blocks",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/pendingTransactions (3000)",
+			"request": {
+				"url": "http://localhost:3000/transactionBuffer",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"Eve\",\n  \"recipientAddress\": \"Bob\",\n  \"nodeId\": \"A\",\n  \"value\": 123,\n  \"action\": \"transaction_external_account\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/pendingTransactions (3001)",
+			"request": {
+				"url": "http://localhost:3001/transactionBuffer",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"Eve\",\n  \"recipientAddress\": \"Bob\",\n  \"nodeId\": \"A\",\n  \"value\": 123,\n  \"action\": \"transaction_external_account\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/pendingTransactions (3002)",
+			"request": {
+				"url": "http://localhost:3002/transactionBuffer",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"Eve\",\n  \"recipientAddress\": \"Bob\",\n  \"nodeId\": \"A\",\n  \"value\": 123,\n  \"action\": \"transaction_external_account\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3000)",
+			"request": {
+				"url": "http://localhost:3000/transactions",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3001)",
+			"request": {
+				"url": "http://localhost:3001/transactions",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3002)",
+			"request": {
+				"url": "http://localhost:3002/transactions",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3000)",
+			"request": {
+				"url": "http://localhost:3000/transactions",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderNodeId\": \"A\",\n  \"senderAddress\": \"Alice\",\n  \"recipientNodeId\": \"B\",\n  \"recipientAddress\": \"Bob\",\n  \"value\": 20,\n  \"action\": \"TRANSACTION_EXTERNAL_ACCOUNT\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/transactions (3001)",
+			"request": {
+				"url": "http://localhost:3001/transactions",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderNodeId\": \"B\",\n  \"senderAddress\": \"Bob\",\n  \"recipientNodeId\": \"A\",\n  \"recipientAddress\": \"Alice\",\n  \"value\": 20,\n  \"action\": \"TRANSACTION_EXTERNAL_ACCOUNT\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks/mine (3000)",
+			"request": {
+				"url": "http://localhost:3000/blocks/mine",
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/blocks/mine (3001)",
+			"request": {
+				"url": "http://localhost:3001/blocks/mine",
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3000)",
+			"request": {
+				"url": "http://localhost:3000/nodes",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3001)",
+			"request": {
+				"url": "http://localhost:3001/nodes",
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3002)",
+			"request": {
+				"url": "http://localhost:3002/nodes",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3000)",
+			"request": {
+				"url": "http://localhost:3000/nodes",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"node2\",\n  \"url\": \"http://localhost:3001\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/nodes (3001)",
+			"request": {
+				"url": "http://localhost:3001/nodes",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": \"node1\",\n  \"url\": \"http://localhost:3000\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/consensus (3000)",
+			"request": {
+				"url": "http://localhost:3000/nodes/consensus",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/consensus (3001)",
+			"request": {
+				"url": "http://localhost:3001/nodes/consensus",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/consensus (3002)",
+			"request": {
+				"url": "http://localhost:3002/nodes/consensus",
+				"method": "PUT",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/contracts (3000)",
+			"request": {
+				"url": "http://localhost:3000/contracts",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "Get all contracts"
+			},
+			"response": []
+		},
+		{
+			"name": "/contracts (3001)",
+			"request": {
+				"url": "http://localhost:3000/contracts",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": "Get all contracts"
+			},
+			"response": []
+		},
+		{
+			"name": "/propogateContract (Counter Example)",
+			"request": {
+				"url": "http://localhost:3000/propogateContract",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"CounterContract\",\n\t\"balance\": 0,\n\t\"counter\": 0,\n\t\"type\": \"CONTRACT_ACCOUNT\",\n\t\"data\": \"({ balance: 0, counter: 0, incrementValue: function() { this.counter++; }, id: 1, fromAddress: \\\"Alice\\\", call: function() { return {getBalance: this.balance, getFromAddress: this.fromAddress}}, send: function() { return { incrementValue: this.incrementValue} }, abi: function() { return {sendables: this.incrementValue.toString()} } })\"\n}\n\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/propogateContract (Move Funds)",
+			"request": {
+				"url": "http://localhost:3000/propogateContract",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"MoveFunds\",\n\t\"balance\": 1000,\n\t\"type\": \"CONTRACT_ACCOUNT\",\n\t\"data\": \" ({balance: 400, expirationDate: new Date(\\\"October 13, 2016 11:13:00\\\"),id: 2, fromAddress: \\\"Stacy\\\", call: function() { return { getBalance: this.balance, getFromAddress: this.fromAddress }; }, send: function() { return { moveFunds: this.moveFunds }; }, abi: function() { return { callables: this.call(), sendables: this.send() }; }, moveFunds: function() { var currentDate = new Date(); if (currentDate > this.expirationDate) { console.log(currentDate, this.expirationDate, \\\"moving funds....\\\");} return { senderNodeId: \\\"A\\\", senderAddress: \\\"Selena Gomez\\\", recipientNodeId: \\\"A\\\", recipientAddress: \\\"Alice\\\", value: 20, action: \\\"TRANSACTION_EXTERNAL_ACCOUNT\\\" };} })\"\n}\n\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/propogateContract (DAOVoting)",
+			"request": {
+				"url": "http://localhost:3000/propogateContract",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"address\": \"DAOBonusVoting\",\n\t\"balance\": 400,\n\t\"type\": \"CONTRACT_ACCOUNT\",\n\t\"data\": \"({ balance: 400, id: 3, authorizedVoters: [{ nodeId: \\\"A\\\", address: \\\"Alice\\\" }, { nodeId: \\\"B\\\", address: \\\"Eve\\\" }, { nodeId: \\\"C\\\", address: \\\"Gal Gadot\\\" }], votes: [{ nodeId: \\\"C\\\", address: \\\"Gal Gadot\\\", votes: 0 }, { nodeId: \\\"C\\\", address: \\\"Ben Affleck\\\", votes: 0 }], fromAddress: \\\"Bob\\\", candidateA: { nodeId: \\\"C\\\", address: \\\"Gal Gadot\\\" }, candidateB: { nodeId: \\\"A\\\", address: \\\"Selena Gomez\\\" }, call: function() { return { getBalance: this.balance, getFromAddress: this.fromAddress };}, send: function() { return { moveFunds: this.changeBalance }; }, moveFunds: function(userData, vote) { const authorizedVoterIdx = this.authorizedVoters.findIndex( user => user.nodeId === userData.nodeId && user.address === userData.address); if (authorizedVoterIdx === -1) return null; const candidateIndex = this.votes.findIndex(candidate => candidate.address === vote); if (candidateIndex === -1) return null; this.votes[candidateIndex].votes++; this.authorizedVoters.splice(authorizedVoterIdx, 1); if (this.authorizedVoters.length > 0) return; this.votes.sort((voteA, voteB) => voteB.votes - voteA.votes); return { senderNodeId: \\\"B\\\", senderAddress: \\\"Bob\\\", recipientNodeId: this.votes[0].nodeId, recipientAddress: this.votes[0].address, value: 400, action: \\\"TRANSACTION_EXTERNAL_ACCOUNT\\\"};} })\"\n}\n\n"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/deployContract (3000)",
+			"request": {
+				"url": "http://localhost:3000/deployContract",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"contractName\": \"Example\",\n\t\"senders\": [\"A\"]\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/mutateContract/:CounterExample (3000 )",
+			"request": {
+				"url": "http://localhost:3000/mutateContract/CounterContract",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"initiaterNode\": \"A\",\n  \"initiaterAddress\": \"Alice\",\n  \"value\": 0,\n  \"methodType\": \"sendable\",\n  \"method\": \"incrementValue\",\n  \"args\": [],\n  \"action\": \"mutate_contract\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/mutateContract/:CounterExample (3001)",
+			"request": {
+				"url": "http://localhost:3001/mutateContract/CounterContract",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"initiaterNode\": \"B\",\n  \"initiaterAddress\": \"Bob\",\n  \"value\": 0,\n  \"methodType\": \"sendable\",\n  \"method\": \"incrementValue\",\n  \"args\": [],\n  \"action\": \"mutate_contract\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/mutateContract/:MoveFunds (3000)",
+			"request": {
+				"url": "http://localhost:3000/mutateContract/MoveFunds",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"MoveFunds\",\n  \"initiaterNode\": \"A\",\n  \"initiaterAddress\": \"Selena Gomez\",\n  \"value\": 500,\n  \"methodType\": \"sendable\",\n  \"method\": \"moveFunds\",\n  \"args\": [],\n  \"action\": \"mutate_contract\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/mutateContract/:MoveFunds (3001)",
+			"request": {
+				"url": "http://localhost:3001/mutateContract/MoveFunds",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"senderAddress\": \"MoveFunds\",\n  \"initiaterNode\": \"B\",\n  \"initiaterAddress\": \"Bob\",\n  \"value\": 500,\n  \"methodType\": \"sendable\",\n  \"method\": \"moveFunds\",\n  \"args\": [],\n  \"action\": \"mutate_contract\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "/mutateContract/:DAOVoting (3000)",
+			"request": {
+				"url": "http://localhost:3000/mutateContract/DAOBonusVoting",
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"initiaterNode\": \"A\",\n  \"initiaterAddress\": \"Alice\",\n  \"value\": 500,\n  \"methodType\": \"sendable\",\n  \"method\": \"moveFunds\",\n  \"args\": [{ \"nodeId\": \"A\", \"address\": \"Alice\" }, \"Gal Gadot\"],\n  \"action\": \"mutate_contract\"\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}
