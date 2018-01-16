@@ -1,0 +1,31 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [  
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Blockchain",
+      "program": "${workspaceFolder}/dist/index.js",
+      "args": ["--port=2201", "--id=1"]
+    },
+    {
+      "name": "Wallet",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceRoot}/wallet/main.js",
+      "stopOnEntry": false,
+      "args": [],
+      "cwd": "${workspaceRoot}/wallet",
+      "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+      "runtimeArgs": [
+        ".",
+        "--enable-logging"
+      ],
+      "env": {},
+      "sourceMaps": false
+    },
+  ]
+}

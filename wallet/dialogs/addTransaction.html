@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add transaction</title>
+    <link rel="stylesheet" href="../bootstrap.min.css">
+  </head>
+  <body>
+    <form>
+      <div>
+        <div>
+          <label>From: </label>
+          <select id="from"></select>
+        </div>
+        <div>
+          <label>To: </label>
+          <select id="to"></select>
+        </div>
+        <div>
+          <label>Value: </label>
+          <input type="text" id="value">
+        </div>
+        <button type="submit">Post transaction</button>
+      </div>
+    </form>
+
+    <script>
+      const {ipcRenderer} = require('electron');
+
+      ipcRenderer.on('setData', (e, data) => {
+        function _setAddresses(elementId, data) {
+          const element = document.querySelector(elementId);
+          for (let item of data) {
+            const option = element.appendChild(document.createElement('option'));
+            option.value = item.address;
+            option.appendChild(document.createTextNode(`${item.name} (${item.address})`));
+            element.appendChild(option);
+          }
+        }
+
+        _setAddresses('#from', data.sources);
+        _setAddresses('#to', data.destinations);
+      });
+
+      document.querySelector('form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('addTransaction', {
+          from: document.querySelector('#from').value,
+          to: document.querySelector('#to').value,
+          value: Number(document.querySelector('#value').value)
+        });
+      });
+
+    </script>
+  </body>
+</html>

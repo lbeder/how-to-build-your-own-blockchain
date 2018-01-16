@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add private key</title>
+    <link rel="stylesheet" href="../bootstrap.min.css">
+  </head>
+  <body>
+    <form>
+      <div>
+        <div>
+          <label>Key: </label>
+          <input type="text" id="key" autofocus>
+          <button type="click" id="generate">Generate</button>
+        </div>
+        <div>
+          <label>Name: </label>
+          <input type="text" id="name">
+        </div>
+        <button type="click" id="submit">Add</button>
+      </div>
+    </form>
+
+    <script>
+      const {ipcRenderer} = require('electron');
+      const EC = require('elliptic').ec;
+      
+      document.getElementById('generate').addEventListener('click', (e) => {
+        e.preventDefault();
+        console.log(new EC('secp256k1').genKeyPair().getPrivate('hex'));
+        document.querySelector('#key').value = new EC('secp256k1').genKeyPair().getPrivate('hex');
+      });
+
+      document.getElementById('submit').addEventListener('click', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('addPrivateKey', {
+          private: document.querySelector('#key').value,
+          name: document.querySelector('#name').value
+        });
+      });
+    </script>
+  </body>
+</html>
