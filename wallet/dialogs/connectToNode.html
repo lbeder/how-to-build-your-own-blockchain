@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Connect to blockchain</title>
+    <link rel="stylesheet" href="../bootstrap.min.css">
+  </head>
+  <body>
+    <form>
+      <div>
+        <div>
+          <label>URL: </label>
+          <input type="text" id="url" value="http://localhost:2201" autofocus>
+        </div>
+        <button type="submit">Connect</button>
+      </div>
+    </form>
+
+    <script>
+      const {ipcRenderer} = require('electron');
+      document.querySelector('form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('connectToNode', document.querySelector('#url').value);
+      });
+    </script>
+  </body>
+</html>

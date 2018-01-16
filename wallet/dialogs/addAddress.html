@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Add address</title>
+    <link rel="stylesheet" href="../bootstrap.min.css">
+  </head>
+  <body>
+    <form>
+      <div>
+        <div>
+          <label>Address: </label>
+          <input type="text" id="address" autofocus>
+        </div>
+        <div>
+          <label>Name: </label>
+          <input type="text" id="name" autofocus>
+        </div>
+        <button type="submit">Add</button>
+      </div>
+    </form>
+/
+    <script>
+      const {ipcRenderer} = require('electron');
+      document.querySelector('form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        ipcRenderer.send('addAddress', {
+          address: document.querySelector('#address').value,
+          name: document.querySelector('#name').value
+        });
+      });
+    </script>
+  </body>
+</html>

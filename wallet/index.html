@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html style="height:100%;width:100%;overflow:hidden">
+  <head>
+    <meta charset="utf-8">
+    <title>How to build your own blockchain</title>
+    <link rel="stylesheet" href="bootstrap.min.css">
+  </head>
+  <body style="height:100%;width:100%;">
+    <div style="height:20%;">
+      <h4>Explanation:</h4>
+      <ul>
+        <li>Connect to a node (Cmd+C)</li>
+        <li>Add blockchain node private key (Cmd+P) (copy the key? from the blockchain persistency file `1.blockchain`</li>
+        <li>Add other private keys (click the `generate` button), or public addresses (Cmd+A)</li>
+        <li>Mine a block to get some coins</li>
+        <li>Add a transaction (Cmd+T)</li>
+        <li>Mine the next block to submit the transaction(Cmd+M)</li>
+      </ul>
+    </div>
+    <div style="height:80%;width:100%">
+      <div style="height:100%;width:70%;float:left;">
+        <div style="height:50%;">
+          <h4>Mined blocks:</h4>
+          <pre style="height:80%; overflow: scroll;">
+            <code>
+              <div id="blocksDiv"></div>
+            </code>
+          </pre>
+        </div>
+        <div style="height:50%;">
+          <h4>Pending transactions:</h4>
+          <pre style="height:80%; overflow: scroll;">
+            <code>
+              <div id="transactionsDiv"></div>
+            </code>
+          </pre>
+        </div>
+      </div>
+      <div style="height:100%;width:25%;float:right;">
+        <div style="height:50%;">
+          <div>
+            <h4>Wallets:</h4>
+            <ul id="walletKeysDiv"></ul>
+          </div>
+        </div>
+        <div style="height:50%;">
+          <div>
+            <h4>Addresses:</h4>
+            <ul id="addressesDiv"></ul>
+          </div>
+        </div>
+      </div>            
+    </div>
+  </body>
+
+  <script>
+    const {ipcRenderer} = require('electron');
+    const blocksDiv = document.querySelector('#blocksDiv');
+    const transactionsDiv = document.querySelector('#transactionsDiv');
+    const walletKeysDiv = document.querySelector('#walletKeysDiv');
+    const addressesDiv = document.querySelector('#addressesDiv');
+
+    function _shorten(string) {
+      return `${string.substring(0, 3)}[...]${string.slice(-3)}`;
+    }
+
+    ipcRenderer.on('refreshBlocks', (e, blocks) => {
+      blocksDiv.innerHTML = '';
+      blocksDiv.appendChild(document.createTextNode(JSON.stringify(blocks.reverse(), null, 2)));
+    });
+
+    ipcRenderer.on('refreshTransactions', (e, transactions) => {
+      transactionsDiv.innerHTML = '';
+      transactionsDiv.appendChild(document.createTextNode(JSON.stringify(transactions, null, 2)));
+    });
+    
+    ipcRenderer.on('refreshKeys', (e, walletKeys) => {
+      walletKeysDiv.innerHTML = '';
+      for (let walletKey of walletKeys) {
+        const li = walletKeysDiv.appendChild(document.createElement('li'));
+        li.appendChild(document.createTextNode(`${walletKey.name}:  `));
+        const balanceDiv = document.createElement('div');
+        balanceDiv.appendChild(document.createTextNode(walletKey.balance));
+        balanceDiv.style.cssText = "color:blue; display:inline;";
+        li.appendChild(balanceDiv);
+        li.appendChild(document.createTextNode(`   (${_shorten(walletKey.address)})`));
+        walletKeysDiv.appendChild(li);
+      }
+    });
+
+    ipcRenderer.on('refreshAddresses', (e, addresses) => {
+      addressesDiv.innerHTML = '';
+      for (let address of addresses) {
+        const li = addressesDiv.appendChild(document.createElement('li'));
+        li.appendChild(document.createTextNode(`${address.name} (${_shorten(address.address)})`));
+        addressesDiv.appendChild(li);
+      }
+    });
+
+  </script>
+</html>
