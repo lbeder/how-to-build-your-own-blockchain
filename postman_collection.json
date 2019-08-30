@@ -1,7 +1,7 @@
 {
 	"info": {
-		"name": "Blockchain Academy",
-		"_postman_id": "0f390873-b99a-559f-aea9-039cdbc582b5",
+		"name": "postman_collection",
+		"_postman_id": "d77634df-15c0-16a4-ef3a-f6daf59fd97d",
 		"description": "",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -11,7 +11,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:3000/blocks",
 					"protocol": "http",
@@ -22,8 +25,7 @@
 					"path": [
 						"blocks"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -43,8 +45,7 @@
 					"path": [
 						"blocks"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -64,8 +65,7 @@
 					"path": [
 						"transactions"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -85,8 +85,7 @@
 					"path": [
 						"transactions"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -102,7 +101,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"senderAddress\": \"Alice\",\n  \"recipientAddress\": \"Bob\",\n  \"value\": 123\n}"
+					"raw": "{\n  \"senderAddress\": \"2448a2564b6bfb84382100e57aa46ee0d28a127bb832f61ad834fa028480eb58\",\n  \"recipientAddress\": \"18c5db6b73058a8d8c7386558f3a0c2e1d1e9100a37037d67ad6819e7eeed7c2\",\n  \"transactionMessage\": \"bonbonpop\",\n  \"transactionFee\": 20,\n  \"value\": 99993\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3000/transactions",
@@ -114,8 +113,63 @@
 					"path": [
 						"transactions"
 					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/multisigtransaction (3000)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"multiSigAddress\": \"c9e276b8e53b66cb48c1fccb5754e30def81b4beb1e4175160d2c819c7cdc18d\",\n\t\"privateKeys\": {\n\t\t\t\"privateKey_1\":\"874f5fc3763c48b37289e4b1713c2c94f58640622e5c6225ff4ef2caff22aa3a\",\n\t\t\t\"privateKey_2\":\"fbb3b20f75ec4b673828ba3250d718123af0ac4fd387d4616fc99edc634a61cd\"\n\t},\n\t\"transaction\": {\n\t\t\t\"recipientAddress\": \"a687d9ced5834397d31fbd32cfbba6d7015b0165ce0aaa99052d0ce79a7d3e76\",\n\t    \t\"transactionMessage\": \"baught a house\",\n\t    \t\"transactionFee\": 2,\n\t    \t\"value\": 12770000000\n\t}\n}"
 				},
-				"description": null
+				"url": {
+					"raw": "http://localhost:3000/multisigtransaction",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"multisigtransaction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/createMultisigWallet (3000)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"publicKeys\": {\n\t\t\t\"publicKey_A\":\"ddcbc907d95c7ddd1fc1df0fa00d627ff2863ce1fbde148aaa6945ad91e86771\",\n\t\t\t\"publicKey_B\":\"ffc6b3416aeba77fd1db2588fa3dceb8ece53b52d9c0b6f04c5cf7e29270a633\",\n\t\t\t\"publicKey_C\":\"4369cd7c4535cc531ebe8dc3fcf641a6838501ece7d5c6de60168a5b35991dd5\"\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/createMultisigWallet",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"createMultisigWallet"
+					]
+				}
 			},
 			"response": []
 		},
@@ -123,10 +177,15 @@
 			"name": "/blocks/mine (3000)",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": ""
+					"raw": "{\n  \"txFeeThreshold\": \"4\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3000/blocks/mine",
@@ -139,8 +198,27 @@
 						"blocks",
 						"mine"
 					]
-				},
-				"description": null
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/wallets (3000)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3000/wallets",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"wallets"
+					]
+				}
 			},
 			"response": []
 		},
@@ -149,7 +227,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:3000/nodes",
 					"protocol": "http",
@@ -160,8 +241,7 @@
 					"path": [
 						"nodes"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -170,7 +250,10 @@
 			"request": {
 				"method": "GET",
 				"header": [],
-				"body": {},
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
 				"url": {
 					"raw": "http://localhost:3001/nodes",
 					"protocol": "http",
@@ -181,8 +264,7 @@
 					"path": [
 						"nodes"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -210,8 +292,35 @@
 					"path": [
 						"nodes"
 					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/createWallet (3000)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": ""
 				},
-				"description": null
+				"url": {
+					"raw": "http://localhost:3000/createWallet",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"createWallet"
+					]
+				}
 			},
 			"response": []
 		},
@@ -227,7 +336,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"id\": \"node1\",\n  \"url\": \"http://localhost:3000\"\n}"
+					"raw": "{\n  \"id\": \"node1\",\n  \"url\": \"http://localhost:3001\"\n}"
 				},
 				"url": {
 					"raw": "http://localhost:3001/nodes",
@@ -239,8 +348,7 @@
 					"path": [
 						"nodes"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		},
@@ -269,8 +377,7 @@
 						"nodes",
 						"consensus"
 					]
-				},
-				"description": null
+				}
 			},
 			"response": []
 		}
