@@ -21,25 +21,45 @@ export class Transaction {
   public senderAddress: Address;
   public recipientAddress: Address;
   public value: number;
+  public commision : number;
+  public transaction_id: string;
+  public signature: string;
 
-  constructor(senderAddress: Address, recipientAddress: Address, value: number) {
+  constructor(senderAddress: Address, recipientAddress: Address, value: number,
+   commision: number, transaction_id:string, signature: string) {
     this.senderAddress = senderAddress;
     this.recipientAddress = recipientAddress;
     this.value = value;
+    this.commision = commision;
+    this.transaction_id = transaction_id;
+    this.signature = signature;
+
   }
+
+  /*
+    This method should validate that the transaction's signature is indeed signed by
+    the sender's public key. Forgive my lazyness but this is not the main issue here :)
+  */
+  public static verify(t: Transaction): boolean {
+    // TODO: validate signature matches the sender's public key
+    return true;
+  }
+  
 }
 
 export class Block {
   public blockNumber: number;
   public transactions: Array<Transaction>;
+  public numberOfPendingTransactions : number;
   public timestamp: number;
   public nonce: number;
   public prevBlock: string;
 
-  constructor(blockNumber: number, transactions: Array<Transaction>, timestamp: number, nonce: number,
-    prevBlock: string) {
+  constructor(blockNumber: number, transactions: Array<Transaction>, 
+    numberOfPendingTransactions: number, timestamp: number, nonce: number, prevBlock: string) {
     this.blockNumber = blockNumber;
     this.transactions = transactions;
+    this.numberOfPendingTransactions = numberOfPendingTransactions
     this.timestamp = timestamp;
     this.nonce = nonce;
     this.prevBlock = prevBlock;
@@ -67,7 +87,7 @@ export class Node {
 
 export class Blockchain {
   // Let's define that our "genesis" block as an empty block, starting from the January 1, 1970 (midnight "UTC").
-  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, "fiat lux");
+  public static readonly GENESIS_BLOCK = new Block(0, [], 0, 0, 0, "fiat lux");
 
   public static readonly DIFFICULTY = 4;
   public static readonly TARGET = 2 ** (256 - Blockchain.DIFFICULTY);
@@ -79,12 +99,16 @@ export class Blockchain {
   public nodes: Set<Node>;
   public blocks: Array<Block>;
   public transactionPool: Array<Transaction>;
+  public minTransactionsLoad: number; // The minimal load the network agrees on
+  public maxTransactionsLoad: number; // The maximal load the network agrees on
   private storagePath: string;
 
   constructor(nodeId: string) {
     this.nodeId = nodeId;
     this.nodes = new Set<Node>();
     this.transactionPool = [];
+    this.minTransactionsLoad = 0;
+    this.maxTransactionsLoad = 0;
 
     this.storagePath = path.resolve(__dirname, "../", `${this.nodeId}.blockchain`);
 
@@ -113,12 +137,13 @@ export class Blockchain {
 
       this.blocks = [Blockchain.GENESIS_BLOCK];
     } finally {
-      this.verify();
+      this.verify(this.blocks, new Array<Block>());
     }
   }
 
+
   // Verifies the blockchain.
-  public static verify(blocks: Array<Block>): boolean {
+  public verify(blocks: Array<Block>, myBlockChain: Array<Block>): boolean {
     try {
       // The blockchain can't be empty. It should always contain at least the genesis block.
       if (blocks.length === 0) {
@@ -129,6 +154,10 @@ export class Blockchain {
       if (!deepEqual(blocks[0], Blockchain.GENESIS_BLOCK)) {
         throw new Error("Invalid first block!");
       }
+
+      // Used later in order to validate that the number of transactions in the block
+      // in consented
+      let maxLoad: number = this.maxTransactionsLoad;
 
       // Verify the chain itself.
       for (let i = 1; i < blocks.length; ++i) {
@@ -146,11 +175,40 @@ export class Blockchain {
         }
 
         // Verify the difficutly of the PoW.
-        //
-        // TODO: what if the diffuclty was adjusted?
-        if (!this.isPoWValid(current.sha256())) {
+        if (!Blockchain.isPoWValid(current.sha256())) {
           throw new Error(`Invalid previous block hash's difficutly for block #${i}!`);
         }
+
+        // Verify that the transactions in this block are well signed
+        for (let j = 0 ; j < current.transactions.length; j++)
+        {
+         if (!Transaction.verify(current.transactions[j]))
+          {
+            throw new Error(`Fake transaction in index ${j} on block #${i}!`);
+          }
+        }
+
+        // In case we compare a new blockchain to our known blockchain, verify that
+        // the number of transactions is lower than the max consent load known to us. 
+        // Notice that if were loaded from disk or we are not synced to global transaction status
+        // previous should be empty, as we are not able to verify the transactions load.
+        if (myBlockChain.length > 0)
+        {
+          // If this block is new to us
+          if (!myBlockChain.find(function (block){return block.sha256() == current.sha256();}))
+          {
+            const consent_number = this.number_of_transactions_to_be_consented(maxLoad);
+            if (current.transactions.length > consent_number)
+            {
+              throw new Error(`Block #${i} has ${current.transactions.length} transactions, 
+                while the consent number should not exceed ${consent_number}!`);
+            }
+            maxLoad -= current.transactions.length;
+            console.log(`Node ${this.nodeId}: New block contains ${current.transactions.length} transactions, I would have agreed for ${consent_number}`);
+          }
+          
+        }
+
       }
 
       return true;
@@ -160,17 +218,10 @@ export class Blockchain {
     }
   }
 
-  // Verifies the blockchain.
-  private verify() {
-    // The blockchain can't be empty. It should always contain at least the genesis block.
-    if (!Blockchain.verify(this.blocks)) {
-      throw new Error("Invalid blockchain!");
-    }
-  }
 
   // Receives candidate blockchains, verifies them, and if a longer and valid alternative is found - uses it to replace
   // our own.
-  public consensus(blockchains: Array<Array<Block>>): boolean {
+  public blockchain_consensus(blockchains: Array<Array<Block>>): boolean {
     // Iterate over the proposed candidates and find the longest, valid, candidate.
     let maxLength: number = 0;
     let bestCandidateIndex: number = -1;
@@ -184,21 +235,68 @@ export class Blockchain {
       }
 
       // Found a good candidate?
-      if (Blockchain.verify(candidate)) {
+      if (this.verify(candidate, this.blocks)) {
         maxLength = candidate.length;
         bestCandidateIndex = i;
       }
     }
 
     // Compare the candidate and consider to use it.
-    if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length || !Blockchain.verify(this.blocks))) {
+    if (bestCandidateIndex !== -1 && (maxLength > this.blocks.length)) {
       this.blocks = blockchains[bestCandidateIndex];
+      this.remove_consented_transactions();
       this.save();
 
       return true;
     }
 
     return false;
+  }
+
+  /**
+    This method is a simple demonstration of deciding what would be an acceptable number of
+    transactions to be included in the next block. Its real implementation would
+    find a suitable range in which load is included out of a list of ranges, and choose the acceptable
+    number of transactions mapped for the chosen range.
+  **/
+  public number_of_transactions_to_be_consented(load: number): number {
+    if (load < 10)
+    {
+      return Math.min(5, load);
+    }
+    if ((10 <= load) &&  (load < 20))
+    {
+      return Math.min(10, load);
+    }
+    return Math.min(20, load);
+  }
+
+    // Receives candidate transaction id lists, and agree on the transactions load range.
+    // Then, when we mine a block, we use the mininal load so that every other node will agree upon,
+    // but when we validate the number of transactions included in candidate new blocks,
+    // we verify it againt the maximal known load.
+    // Notice that here we learn only of new transactions ids, and unable to verify each transaction.
+    // Its importnat that full transactions sync, which is a more expensive operation compared to
+    // only syncing the IDs, would occure from time to time so that other nodes will not forge
+    // transaction ids in order to falsely increase the network load, so they could get more
+    // money from commisions.
+  public transactions_consensus(transaction_ids_list: Array<Array<string>>): [number, number]  {
+    let minLength : number = this.transactionPool.length;
+    let maxLength : number = this.transactionPool.length;
+
+    for (let i = 0; i < transaction_ids_list.length; ++i) {
+      const candidate = transaction_ids_list[i];
+      if (candidate.length < minLength) {
+        minLength = candidate.length;
+      }
+      if (candidate.length > maxLength) {
+        maxLength = candidate.length;
+      }
+    }
+      this.maxTransactionsLoad = maxLength;
+      this.minTransactionsLoad = minLength;
+      
+      return [minLength, maxLength];
   }
 
   // Validates PoW.
@@ -215,17 +313,16 @@ export class Blockchain {
   }
 
   // Mines for block.
-  private mineBlock(transactions: Array<Transaction>): Block {
+  private mineBlock(transactions: Array<Transaction>, numb_pending_transactions : number): Block {
     // Create a new block which will "point" to the last block.
     const lastBlock = this.getLastBlock();
-    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, Blockchain.now(), 0, lastBlock.sha256());
+    const newBlock = new Block(lastBlock.blockNumber + 1, transactions, numb_pending_transactions, Blockchain.now(),
+     0, lastBlock.sha256());
 
     while (true) {
       const pow = newBlock.sha256();
-      console.log(`Mining #${newBlock.blockNumber}: nonce: ${newBlock.nonce}, pow: ${pow}`);
 
       if (Blockchain.isPoWValid(pow)) {
-        console.log(`Found valid POW: ${pow}!`);
         break;
       }
 
@@ -236,24 +333,90 @@ export class Blockchain {
   }
 
   // Submits new transaction
-  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number) {
-    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value));
+  public submitTransaction(senderAddress: Address, recipientAddress: Address, value: number,
+    commision: number, transaction_id: string, signature: string) { 
+    this.transactionPool.push(new Transaction(senderAddress, recipientAddress, value, commision, transaction_id, signature));
+  }
+
+  // Check that all transactions are real and than nobody's cheating in order
+  // to force a larger trasaction list in the next block.
+  // In addition, learn every unknown transaction.
+  public sync_full_transactions(nodes: Array<Node>, synced_transactions : Array<Array<Transaction>>, transactions_ids : Array<Array<string>>) {
+    
+    for(let i: number = 0 ; i < nodes.length; i++)
+    {
+      const transactions = synced_transactions[i];
+      const ids = transactions_ids[i];
+
+      for (let j : number = 0 ; j < transactions.length; j++)
+      {
+        if (transactions[j].transaction_id != ids[j] || !Transaction.verify(transactions[j]))
+        {
+          throw new Error(`Node ${nodes[i].id} is cheating on transaction id ${transactions[j].transaction_id}!!!`);
+        }
+        if (!this.transactionPool.find(function (t){return t.transaction_id == transactions[j].transaction_id }))
+        {
+          this.transactionPool.push(transactions[j]);
+        }
+      }
+    }
+  }
+
+  // Remove all consented transaction from our transaction pool
+  public remove_consented_transactions(){
+    let consented_transactions : Array<Transaction> = [].concat.apply([], this.blocks.map(block => block.transactions));
+    let consented_transactions_ids : Array<string> = consented_transactions.map(t => t.transaction_id);
+    
+    this.transactionPool =  this.transactionPool.filter(function (tr) {
+      return !consented_transactions_ids.find(function (tid){return tid == tr.transaction_id});
+    }); 
+    console.log(`Node ${this.nodeId}: Now pending ${this.transactionPool.length} transactions.`)
+  }
+
+  // Same way as it is in bitcoin, the miner chooses the transactions with the largest 
+  // commisions, so it is still an interest for the transaction sender to send a generous commision.
+  public choose_lucrative_transactions(n: number): Array<Transaction> {
+    if (n <= 0)
+    {
+      return new Array<Transaction>();
+    }
+
+    this.transactionPool.sort(function(x,y){
+      return (x.commision > y.commision) ? -1 : ((x.commision < y.commision) ? 1 : 0);});
+
+    return this.transactionPool.slice(0, n);
   }
 
   // Creates new block on the blockchain.
   public createBlock(): Block {
+    // Get the number of transactions to be included in this block
+    const number_of_transactions_to_consent = this.number_of_transactions_to_be_consented(this.minTransactionsLoad);
+    // Reduce 1 in order to include our prize transaction
+    const number_of_transactions_to_take_from_pool = number_of_transactions_to_consent - 1;
+    const number_of_pending_transactions = this.transactionPool.length - number_of_transactions_to_take_from_pool;
+    const chosen_transactions = this.choose_lucrative_transactions(number_of_transactions_to_take_from_pool);
+
+    console.log(`${this.nodeId}: Mining when number of transactions ranges between ${this.minTransactionsLoad} and ${this.maxTransactionsLoad}, so I'll include ${number_of_transactions_to_consent}.`);
+
     // Add a "coinbase" transaction granting us the mining reward!
-    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD),
-      ...this.transactionPool];
+    const transaction_id = uuidv4()
+    // TODO: sign for real
+    const signature = uuidv4()
+    const transactions = [new Transaction(Blockchain.MINING_SENDER, this.nodeId, Blockchain.MINING_REWARD, 0, transaction_id, signature),
+      ...chosen_transactions];
 
     // Mine the transactions in a new block.
-    const newBlock = this.mineBlock(transactions);
+    const newBlock = this.mineBlock(transactions, number_of_pending_transactions);
+
+    console.log(`${this.nodeId}: Successfully mined block. Number of pending transactions: ${number_of_pending_transactions}`);
 
     // Append the new block to the blockchain.
     this.blocks.push(newBlock);
 
     // Remove the mined transactions.
-    this.transactionPool = [];
+    this.transactionPool = this.transactionPool.slice(number_of_transactions_to_take_from_pool);
+    this.minTransactionsLoad = 0;
+    this.maxTransactionsLoad = 0;
 
     // Save the blockchain to the storage.
     this.save();
@@ -321,20 +484,30 @@ app.get("/transactions", (req: express.Request, res: express.Response) => {
   res.json(serialize(blockchain.transactionPool));
 });
 
+// Show all transactions in the transaction pool.
+app.get("/transactions_ids", (req: express.Request, res: express.Response) => {
+  const ids = blockchain.transactionPool.map(transaction => transaction.transaction_id);
+  res.json(JSON.stringify(ids));
+});
+
 app.post("/transactions", (req: express.Request, res: express.Response) => {
   const senderAddress = req.body.senderAddress;
   const recipientAddress = req.body.recipientAddress;
   const value = Number(req.body.value);
-
-  if (!senderAddress || !recipientAddress || !value)  {
+  const commision = Number(req.body.commision);
+  const transaction_id = req.body.transaction_id;
+  const signature = req.body.signature;
+  
+  if (!senderAddress || !recipientAddress || !value || !commision || !transaction_id || !signature)  {
     res.json("Invalid parameters!");
     res.status(500);
     return;
   }
 
-  blockchain.submitTransaction(senderAddress, recipientAddress, value);
-
-  res.json(`Transaction from ${senderAddress} to ${recipientAddress} was added successfully`);
+  blockchain.submitTransaction(senderAddress, recipientAddress, value, commision, transaction_id, signature);
+  res.json(``)
+  res.status(200);
+  return;
 });
 
 app.get("/nodes", (req: express.Request, res: express.Response) => {
@@ -361,7 +534,7 @@ app.post("/nodes", (req: express.Request, res: express.Response) => {
   }
 });
 
-app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
+app.put("/nodes/blockchain_consensus", (req: express.Request, res: express.Response) => {
   // Fetch the state of the other nodes.
   const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}blocks`));
 
@@ -373,11 +546,69 @@ app.put("/nodes/consensus", (req: express.Request, res: express.Response) => {
   }
 
   axios.all(requests).then(axios.spread((...blockchains) => {
-    if (blockchain.consensus(blockchains.map(res => deserialize<Block[]>(Block, res.data)))) {
-      res.json(`Node ${nodeId} has reached a consensus on a new state.`);
+    if (blockchain.blockchain_consensus(blockchains.map(res => deserialize<Block[]>(Block, res.data)))) {
+      res.json(`Node ${nodeId} has reached a consensus on a new blockchain state.`);
     } else {
-      res.json(`Node ${nodeId} hasn't reached a consensus on the existing state.`);
+      res.json(`Node ${nodeId} hasn't reached a consensus on the existing blockchain state.`);
     }
+
+    res.status(200);
+    return;
+  })).catch(err => {
+    console.log(err);
+    res.status(500);
+    res.json(err);
+    return;
+  });
+
+  res.status(500);
+});
+
+app.put("/nodes/sync_full_transactions", (req: express.Request, res: express.Response) => {
+  // Fetch the state of the other nodes.
+  const nodes = blockchain.nodes.toArray();
+
+  const full_transactions_requests = nodes.map(node => axios.get(`${node.url}transactions`));
+  
+  axios.all(full_transactions_requests).then(axios.spread((...transactions_list) => {
+    const only_id_requests = nodes.map(node => axios.get(`${node.url}transactions_ids`));
+    if (full_transactions_requests.length === 0 || only_id_requests.length != full_transactions_requests.length) {
+      res.json("Error syncing transactions!");
+      res.status(404);
+
+      return;
+    }
+    axios.all(only_id_requests).then(axios.spread((...transactions_id_list) => {
+      blockchain.sync_full_transactions(nodes, transactions_list.map(res => deserialize<Transaction[]>(Transaction, res.data)),
+        transactions_id_list.map(res => JSON.parse(res.data)));
+    res.json(`Transactions are synced. Nobody's cheating. For now...`);
+    res.status(200);
+    return;
+    }));
+  })).catch(err => {
+    console.log(err);
+    res.status(500);
+    res.json(err);
+    return;
+  });
+
+  res.status(500);
+});
+
+app.put("/nodes/transactions_consensus", (req: express.Request, res: express.Response) => {
+  // Fetch the state of the other nodes.
+  const requests = blockchain.nodes.toArray().map(node => axios.get(`${node.url}transactions_ids`));
+
+  if (requests.length === 0) {
+    res.json("There are nodes to sync with!");
+    res.status(404);
+
+    return;
+  }
+
+  axios.all(requests).then(axios.spread((...transaction_ids_list) => {
+    const load_range = blockchain.transactions_consensus(transaction_ids_list.map(res => JSON.parse(res.data)));
+      res.json(`Node ${nodeId} has reached a consensus of between ${load_range[0]} to ${load_range[1]} transactions.`);
 
     res.status(200);
     return;
