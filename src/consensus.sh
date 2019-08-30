@@ -3,7 +3,7 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-./cleanslate.sh
+./cleanstate.sh
 
 # Start the nodes.
 NODE1="A"
@@ -13,8 +13,8 @@ NODE2="B"
 NODE2_URL="http://localhost:3001"
 NODE2_PORT=3001
 
-node ../dist/13_consensus.js --port=${NODE1_PORT} --id=${NODE1} &
-node ../dist/13_consensus.js --port=${NODE2_PORT} --id=${NODE2} &
+node ../dist/app.js --port=${NODE1_PORT} --id=${NODE1} &
+node ../dist/app.js --port=${NODE2_PORT} --id=${NODE2} &
 
 sleep 2
 

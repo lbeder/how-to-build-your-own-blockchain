@@ -6,6 +6,16 @@ You can find the slides of the talk here: [How to Build Your Own Blockchain - Sl
 
 ![How to Build Your Own Blockchain](images/event.png)
 
+## Install
+
+```
+npm install
+
+npm run-script build
+
+npm start
+```
+
 ## Blockchain Academy
 
 Blockchain Academy, the community for technologists looking to learn more about crypto and Blockchain technology.

@@ -3,13 +3,13 @@
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
 
-./cleanslate.sh
+./cleanstate.sh
 
 # Start the nodes.
 NODE_PORT=3000
 NODE_URL="http://localhost:${NODE_PORT}"
 
-node ../dist/11_mining_api.js &
+node ../dist/app.js &
 
 sleep 2
 
