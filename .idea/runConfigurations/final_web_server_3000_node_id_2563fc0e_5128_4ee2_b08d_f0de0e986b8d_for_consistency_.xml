@@ -1,0 +1,5 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="final web server 3000 node id 2563fc0e-5128-4ee2-b08d-f0de0e986b8d for consistency " type="NodeJSConfigurationType" factoryName="Node.js" application-parameters="--port 3000 --id 2563fc0e-5128-4ee2-b08d-f0de0e986b8d" path-to-js-file="dist/final.js" working-dir="$PROJECT_DIR$">
+    <method />
+  </configuration>
+</component>
